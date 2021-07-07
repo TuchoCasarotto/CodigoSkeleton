@@ -57,7 +57,7 @@ static void glfw_error_callback(int error, const char* description)
 //----------END FLAVIO----------
 
 //		declaración de funciones nuestras
-//		dibuja un huevo entre dos articulaciones
+//		dibuja un hueso entre dos articulaciones
 void			Hueso(cv::Mat esqueleto, cv::Point arts[25], int joint1, int joint2, cv::Scalar color, int ancho);
 double			Arco(cv::Mat, int joint1, int joint2, int joint3, cv::Scalar, int ancho);
 double			filtroAB(double x_obs, double x_old, double &vx_old);
