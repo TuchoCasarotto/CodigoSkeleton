@@ -69,7 +69,7 @@ int				RedonI(int aux);
 static void		HelpMarker(const char* desc);
 void			limpiar_records(void);
 
-
+//Este es un comentario
 
 
 //  cv::Point articulacion[42]; B G R
