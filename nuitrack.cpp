@@ -135,6 +135,7 @@ const int	SALTO_LARGO			= 1;		//
 const int	JUEGOS				= 2;		// es la forma de seleccionar cuál está activo
 const int	POSTURAS			= 3;		// para detectar posturas
 const int	FLEXIONES			= 4;		// contador de flexiones con una mano
+const int   MANO_DERECHA        = 5;        // Detección de la mano derecha
 
 
 //	FIJAR ACTIVIDAD INICIAL
@@ -516,6 +517,8 @@ int NuiTrack::run()
 		ImGui::RadioButton("Selección",				&ACTIVIDADelegida, 2); 
 		ImGui::SameLine();
 		ImGui::RadioButton("Posturas",				&ACTIVIDADelegida, 3);
+		ImGui::SameLine();
+		ImGui::RadioButton("Detección de Mano Derecha", &ACTIVIDADelegida, 5);
 
 
 		switch (ACTIVIDADelegida) {
@@ -570,6 +573,15 @@ int NuiTrack::run()
 			}
 			break;
 
+		case  MANO_DERECHA:   //5 Actividad de detección de la mano Derecha
+
+			  ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Detección de mano Derecha");
+			  if (ACTIVIDADprevia != MANO_DERECHA) {
+				  ACTIVIDADprevia = MANO_DERECHA;
+				  limpiar_records();
+				  CONTANDO = false;
+			  }
+			  break;
 		}
 
 
@@ -643,6 +655,7 @@ int NuiTrack::run()
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
+            case MANO_DERECHA       // 5
 
 				break;
 			}						
@@ -688,6 +701,7 @@ int NuiTrack::run()
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
+            case MANO_DERECHA       //5
 
 				break;
 			}
@@ -849,6 +863,13 @@ int NuiTrack::run()
 			case JUEGOS:			//	para los juegos interactivos
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "toque los circulos");
 				break;
+			case MANO_DERECHA:  // Para la detección de la mano derecha 
+			     case 0:          // Hombros derechos
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Pongo los hombros alineados");
+				break;
+				 case 1:          // Debe levantar la mano Derecha
+					 ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "BIEN!, Levante la mano derecha");
+					 break;
 			}
 			ImGui::PopFont();
 			ImGui::End();
@@ -937,7 +958,8 @@ int NuiTrack::run()
 				ImGui::RadioButton("Flexiones",			&MENUmano, 7);
 				ImGui::RadioButton("Reset Rectords",	&MENUmano, 3);
 				ImGui::RadioButton("Ver/Quitar Ayuda",	&MENUmano, 4);
-				ImGui::RadioButton("Salir",				&MENUmano, 5);
+				ImGui::RadioButton("Salir",				&MENUmano, 8);
+				ImGui::RadioButton("Detección de mano Derecha", &MENUmano, 5);
 
 				//	las cuales se van modificando automáticamente al subir o bajar la misma
 				if ((MANOinicial.y - MANOactual.y) < -18) {
