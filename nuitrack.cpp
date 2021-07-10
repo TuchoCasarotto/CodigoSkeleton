@@ -655,7 +655,7 @@ int NuiTrack::run()
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
-            case MANO_DERECHA       // 5
+			case MANO_DERECHA:       // 5
 
 				break;
 			}						
@@ -701,7 +701,7 @@ int NuiTrack::run()
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
-            case MANO_DERECHA       //5
+			case MANO_DERECHA:       //5
 
 				break;
 			}
@@ -864,12 +864,14 @@ int NuiTrack::run()
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "toque los circulos");
 				break;
 			case MANO_DERECHA:  // Para la detección de la mano derecha 
-			     case 0:          // Hombros derechos
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Pongo los hombros alineados");
-				break;
-				 case 1:          // Debe levantar la mano Derecha
-					 ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "BIEN!, Levante la mano derecha");
-					 break;
+				switch (MANO_DERECHA) {
+				case 0:          // Hombros derechos
+					ImGui::TextColored(ImVec4(0.95f, 0.12f, 0.04f, 1.0f), "Ponga los hombros alineados");// bordo
+					break;
+				case 1:          // Debe levantar la mano Derecha
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "BIEN!, Levante la mano derecha");
+					break;
+				}
 			}
 			ImGui::PopFont();
 			ImGui::End();
