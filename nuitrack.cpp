@@ -69,8 +69,6 @@ int				RedonI(int aux);
 static void		HelpMarker(const char* desc);
 void			limpiar_records(void);
 
-//Este es un comentario
-
 
 //  cv::Point articulacion[42]; B G R
 cv::Scalar _cyan	= cv::Scalar(222, 222, 0);
@@ -130,16 +128,16 @@ double		ang_l_codo, ang_r_codo, ang_l_hombro, ang_r_hombro;
 //	bandera principales
 
 //	ACTIVIDADES ACTUALES: constantes de cada tarea
-const int	SALTO_VERTICAL		= 0;		// 
+const int	SALTO_VERTICAL		= 5;		// 
 const int	SALTO_LARGO			= 1;		//
 const int	JUEGOS				= 2;		// es la forma de seleccionar cuál está activo
 const int	POSTURAS			= 3;		// para detectar posturas
 const int	FLEXIONES			= 4;		// contador de flexiones con una mano
-const int   MANO_DERECHA        = 5;        // Detección de la mano derecha
+const int   MANO_DERECHA        = 0;        // Detección de la mano derecha
 
 
 //	FIJAR ACTIVIDAD INICIAL
-int			ACTIVIDADelegida	= 2;		//	0 vertical 1 largo 2 juegos
+int			ACTIVIDADelegida	= 2;		//	0 mano derecha 1 largo 2 juegos
 int			ACTIVIDADprevia		= 0;		//
 
 bool		AYUDA_activado		= true;		//	ventanida de ayuda arriba a la izquierda
@@ -468,7 +466,7 @@ int NuiTrack::run()
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Tiempo: %07.2f", tiempo_max);	//	
 				//	cronómetro
 		if (CONTANDO == true) {
-			tiempo_cur = (((double)(clock()) - (double)(t_cur)) / double(CLOCKS_PER_SEC));
+			tiempo_cur = (((double)(clock()) - (double)(t_cur)) / double(CLOCKS_PER_SEC)); // variable del cronómetro 
 		}				
 		ImGui::SameLine();
 		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 0.8f), "    Crono: %07.2f", tiempo_cur);
@@ -510,19 +508,21 @@ int NuiTrack::run()
 		
 
 		//	actividades principales del programa
-		ImGui::RadioButton("Salto Vertical",		&ACTIVIDADelegida, 0); 
+		
+		ImGui::RadioButton("Deteccion de Mano Derecha", &ACTIVIDADelegida, 0);
+		ImGui::SameLine();
+		ImGui::RadioButton("Salto Vertical",		&ACTIVIDADelegida, 5); 
 		ImGui::SameLine();
 		ImGui::RadioButton("Salto en Largo",		&ACTIVIDADelegida, 1); 
 		ImGui::SameLine();
 		ImGui::RadioButton("Selección",				&ACTIVIDADelegida, 2); 
 		ImGui::SameLine();
 		ImGui::RadioButton("Posturas",				&ACTIVIDADelegida, 3);
-		ImGui::SameLine();
-		ImGui::RadioButton("Detección de Mano Derecha", &ACTIVIDADelegida, 5);
+		
 
 
 		switch (ACTIVIDADelegida) {
-		case SALTO_VERTICAL:	//	0
+		case SALTO_VERTICAL:	//	5
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Salto Vertical");		//  yellow
 			if (ACTIVIDADprevia != SALTO_VERTICAL) {	//	si viene de otra actividad...
 				ACTIVIDADprevia = SALTO_VERTICAL;		//	actualizo previa
@@ -546,7 +546,7 @@ int NuiTrack::run()
 			if (ACTIVIDADprevia != JUEGOS) {											//	si viene de otra actividad...
 				ACTIVIDADprevia = JUEGOS;												//	actualizo previa
 				limpiar_records();														//	limpio records
-				SALTOstatus		= 0;													//	salto listo para empezar
+				SALTOstatus		= 0;													//	juegos listo para empezar
 				CONTANDO		= false;
 			}
 			break;
@@ -557,7 +557,7 @@ int NuiTrack::run()
 			if (ACTIVIDADprevia != POSTURAS) {											//	si viene de otra actividad...
 				ACTIVIDADprevia = POSTURAS;												//	actualizo previa
 				limpiar_records();														//	limpio records
-				SALTOstatus		= 0;													//	salto listo para empezar
+				SALTOstatus		= 0;													//	posturas listo para empezar
 				CONTANDO		= false;
 			}
 			break;
@@ -568,18 +568,19 @@ int NuiTrack::run()
 			if (ACTIVIDADprevia != FLEXIONES) {											//	si viene de otra actividad...
 				ACTIVIDADprevia = FLEXIONES;											//	actualizo previa
 				limpiar_records();														//	limpio records
-				SALTOstatus		= 0;													//	salto listo para empezar
+				SALTOstatus		= 0;													//	flexiones listo para empezar
 				CONTANDO		= false;
 			}
 			break;
 
-		case  MANO_DERECHA:   //5 Actividad de detección de la mano Derecha
+		case  MANO_DERECHA:   //0 Actividad de detección de la mano Derecha
 
-			  ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Detección de mano Derecha");
-			  if (ACTIVIDADprevia != MANO_DERECHA) {
-				  ACTIVIDADprevia = MANO_DERECHA;
-				  limpiar_records();
-				  CONTANDO = false;
+			  ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Deteccion de mano Derecha");
+			  if (ACTIVIDADprevia != MANO_DERECHA) {                                      // si viene otra actividad
+				  ACTIVIDADprevia = MANO_DERECHA;                                         // Actualizo
+				  limpiar_records();                                                      // limpio records
+				  SALTOstatus = 0;                                                        // Mano derecha listo para empezar
+				  CONTANDO = false;                      
 			  }
 			  break;
 		}
@@ -646,7 +647,7 @@ int NuiTrack::run()
 			ImGui::PushFont(font24);																	//  cambio a 24
 			
 			switch (ACTIVIDADelegida) {
-			case SALTO_VERTICAL:	//	0
+			case SALTO_VERTICAL:	//	5
 				ImGui::Text("Altura obtenida: "); ImGui::SameLine();
 				break;
 			case SALTO_LARGO:		//	1
@@ -654,9 +655,9 @@ int NuiTrack::run()
 				break;
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
-			case FLEXIONES:			//	4
-			case MANO_DERECHA:       // 5
-
+			case FLEXIONES:			//	4     
+			case MANO_DERECHA:     // 0
+				ImGui::Text("Tiempo en levantar la mano: "); ImGui::SameLine();
 				break;
 			}						
 
@@ -692,7 +693,7 @@ int NuiTrack::run()
 			ImGui::Separator();	
 
 			switch (ACTIVIDADelegida) {
-			case SALTO_VERTICAL:	//	0
+			case SALTO_VERTICAL:	//	5
 				ImGui::Text("Altura: "); ImGui::SameLine();
 				break;
 			case SALTO_LARGO:		//	1
@@ -701,7 +702,8 @@ int NuiTrack::run()
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
-			case MANO_DERECHA:       //5
+			case MANO_DERECHA:       //0
+				ImGui::Text("Cantidad de veces que levanto la mano: "); ImGui::SameLine();
 
 				break;
 			}
@@ -767,7 +769,7 @@ int NuiTrack::run()
 			if (repeticiones < 40) {		//		esto hay que arreglarlo... corta a los 40 saltos
 
 				switch (ACTIVIDADelegida) {
-				case SALTO_VERTICAL:	//	0
+				case SALTO_VERTICAL:	//	5
 					ImGui::Text("Altura del Salto: "); 
 					break;
 				case SALTO_LARGO:		//	1
@@ -776,6 +778,7 @@ int NuiTrack::run()
 				case JUEGOS:			//	2
 				case POSTURAS:			//	3
 				case FLEXIONES:			//	4
+				case MANO_DERECHA:      // 0
 
 					break;
 				}
@@ -953,7 +956,8 @@ int NuiTrack::run()
 
 				//	sobre la mano izquierda aparece un menú con las siguientes opciones
 				//ImGui::Text("MENUmano --> %d",MENUmano);
-				ImGui::RadioButton("Salto Vertical",	&MENUmano, 0);
+				ImGui::RadioButton("Detección de mano Derecha", &MENUmano, 0);
+				ImGui::RadioButton("Salto Vertical",	&MENUmano, 5);
 				ImGui::RadioButton("Salto en Largo",	&MENUmano, 1);
 				ImGui::RadioButton("Selección",			&MENUmano, 2);
 				ImGui::RadioButton("Posturas",			&MENUmano, 6);
@@ -961,7 +965,7 @@ int NuiTrack::run()
 				ImGui::RadioButton("Reset Rectords",	&MENUmano, 3);
 				ImGui::RadioButton("Ver/Quitar Ayuda",	&MENUmano, 4);
 				ImGui::RadioButton("Salir",				&MENUmano, 8);
-				ImGui::RadioButton("Detección de mano Derecha", &MENUmano, 5);
+				
 
 				//	las cuales se van modificando automáticamente al subir o bajar la misma
 				if ((MANOinicial.y - MANOactual.y) < -18) {
