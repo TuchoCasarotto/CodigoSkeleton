@@ -153,14 +153,27 @@ int			CIRCULOcont			= -1;
 int			CIRCULO2cont		= -1;
 cv::Point	centro;
 cv::Point	centro2;
+
 // Bandera de mano derecha
 
 int Band_Derecha = 0;
 int DifHombrosMD = 0;
 int UmbralHombrosMD = 05;
 int ContDerecha = 0;
-int stableDerecha = 50;
-
+int stableDerecha = 100;
+int indice_mano = 0;
+float levantadas[10];
+float tiempo_levantadas[10];
+int levante_record = 0;
+cv::Point Pos_Cabeza1;
+cv::Point Pos_Mano_Derecha;
+int DIF_mano_cabezaCM = 0;
+int DIST_mano_cabezaCM = 0;
+int cabeza_base = 0;
+int Umbralreferencia = 50;
+int cabeza_max = 0;
+int contador_mano_arriba = 0;
+bool bandera_contador = 0;
 
 //	medición del salto vertical
 bool		SALTANDO			= false;	//
@@ -666,7 +679,7 @@ int NuiTrack::run()
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4     
 			case MANO_DERECHA:     // 0
-				ImGui::Text("Tiempo en levantar la mano: "); ImGui::SameLine();
+				ImGui::Text("Tiempo mano: "); ImGui::SameLine();
 				break;
 			}						
 
@@ -712,7 +725,7 @@ int NuiTrack::run()
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
 			case MANO_DERECHA:       //0
-				ImGui::Text("Cantidad de veces que levanto la mano: "); ImGui::SameLine();
+				ImGui::Text("Veces que sube mano: "); ImGui::SameLine();
 
 				break;
 			}
@@ -884,10 +897,14 @@ int NuiTrack::run()
 					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "BIEN, Quieto!!");
 					break;
 				case 2:          // Debe levantar la mano Derecha
-					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Levante la Derecha");
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Levante la mano Derecha");
+					break;
+				case 3:
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "MUY BIEN !");
 					break;
 				}
 			}
+
 			ImGui::PopFont();
 			ImGui::End();
 		}
@@ -1373,7 +1390,7 @@ inline void NuiTrack::drawColor()
 // Draw Skeleton
 inline void NuiTrack::drawSkeleton()
 {
-	
+
 	//	voy a copiar user_mat en skeleton_mat, pero cambiando de tamaño para poder meter el texto
 	skeleton_mat = cv::Mat::zeros(final_height, final_width, CV_8UC3);	// es de 800 x 1280
 
@@ -1385,17 +1402,17 @@ inline void NuiTrack::drawSkeleton()
 		repeticiones    = 0;				//  repeticiones
 	}
 	*/
-	
+
 	// este bloque es el permite manejar el reloj.
 	//   quiero mostrar el período de muestreo ahora
 	if (t_INIT == true) {					//	inicio de la detección del esqueleto
 		t_INIT = false;
-		t_start			= std::clock();		//  inicio	tomo el valor de tiempo		
+		t_start = std::clock();		//  inicio	tomo el valor de tiempo		
 	}
 	else {
 		t_INIT = true;
-		t_end			= std::clock();														//	final
-		t_taken			= round(1000.0 * (double(t_end) - (double)(t_start)) / double(CLOCKS_PER_SEC));	//	tiempo por muestra en milisegundos		
+		t_end = std::clock();														//	final
+		t_taken = round(1000.0 * (double(t_end) - (double)(t_start)) / double(CLOCKS_PER_SEC));	//	tiempo por muestra en milisegundos		
 
 		if (t_taken < t_takenm) {
 			t_takenm = t_taken;
@@ -1418,7 +1435,7 @@ inline void NuiTrack::drawSkeleton()
 		return;
 	}
 
-	
+
 	// Copio el user sobre el esqueleto
 	//color_mat.copyTo(skeleton_mat);
 	//cv::resize(user_mat, user_mat, cv::Size(final_width, final_height ), 0, 0, 1);
@@ -1437,21 +1454,21 @@ inline void NuiTrack::drawSkeleton()
 			// para cada articulación
 			if (joint.confidence < 0.5) {					//  era 0.2
 				//si estoy por debajo del valor de confianza mínimo la ignoro
-				articulacion[cont]	= cv::Point(0, 0);		//  JMT, la pongo en el vértice							
+				articulacion[cont] = cv::Point(0, 0);		//  JMT, la pongo en el vértice							
 				//art_depth[cont]		= 0;
 				cont++;										//  sigo con el contador
 				continue;
 			}
 			//  obtuvo un joint correcto y lo ubica como POINT en la imagen de acuerdo al ancho de la pantalla
-			const cv::Point point	= { static_cast<int32_t>(joint.proj.x * color_width) , static_cast<int32_t>(joint.proj.y * color_height) };
-			articulacion[cont]		= point;				//	el punto en la pantalla
-			artFULL[cont]			= joint;				//	la articulación completa
+			const cv::Point point = { static_cast<int32_t>(joint.proj.x * color_width) , static_cast<int32_t>(joint.proj.y * color_height) };
+			articulacion[cont] = point;				//	el punto en la pantalla
+			artFULL[cont] = joint;				//	la articulación completa
 			//cont++;
 			//  pero voy a evitar las manos
 			switch (cont)
 			{
 				/*
-			case 3:					
+			case 3:
 				distance = depth_mat.at<uint16_t>(articulacion[3]);		//distancia de la articulación [2] en la imagen de profundidad
 				//  muestro la distancia
 				cv::putText(skeleton_mat, cv::format("d1 = %u",distance), cv::Point(Poffset + 300, 60), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);
@@ -1459,7 +1476,7 @@ inline void NuiTrack::drawSkeleton()
 				distance = joint.proj.z;				//  distancia de la articulación 2
 				//out = "d2 = " + std::to_string(distance);
 				//cv::putText(skeleton_mat, out, cv::Point(Poffset + 310, 90), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);
-				cv::putText(skeleton_mat, cv::format("d2 = %u", distance), cv::Point(Poffset + 300, 85), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);				
+				cv::putText(skeleton_mat, cv::format("d2 = %u", distance), cv::Point(Poffset + 300, 85), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);
 				cv::putText(skeleton_mat, cv::format("d3 = %u", distancia[skeleton.id]), cv::Point(Poffset + 300, 115), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);
 				break;
 				*/
@@ -1484,7 +1501,7 @@ inline void NuiTrack::drawSkeleton()
 			case 21:
 				if (ACTIVIDADelegida == SALTO_VERTICAL) {
 					cv::circle(skeleton_mat, point, 8, _white, -2);
-				}			
+				}
 				//distance = depth_mat.at<uint16_t>(articulacion[cont]);
 				//distance = joint.proj.y;
 				//distance = artFULL[cont].real.y;
@@ -1504,47 +1521,47 @@ inline void NuiTrack::drawSkeleton()
 			//cv::putText(skeleton_mat, "Hay esqueleto!", cv::Point(20, 20), cv::FONT_HERSHEY_TRIPLEX, 1, cv::Scalar(200, 200, 50), 1, cv::LINE_AA);
 		}
 		//cv::putText(skeleton_mat, std::to_string (cont)  , cv::Point(20, 20), cv::FONT_HERSHEY_TRIPLEX, 3, cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
-		
-		
+
+
 		//  *****************  PROCESAMIENTO ABAJO
 
-		dist		= RedonD(sqrt(pow(artFULL[2].real.x - artFULL[4].real.x, 2) + pow(artFULL[2].real.y - artFULL[4].real.y, 2)));
-		escala		= (dist / RedonD(sqrt(pow(articulacion[2].x - articulacion[4].x, 2) + pow(articulacion[2].y - articulacion[4].y, 2))));
-		alturaMM	= RedonI(0.1 * altura * escala);
+		dist = RedonD(sqrt(pow(artFULL[2].real.x - artFULL[4].real.x, 2) + pow(artFULL[2].real.y - artFULL[4].real.y, 2)));
+		escala = (dist / RedonD(sqrt(pow(articulacion[2].x - articulacion[4].x, 2) + pow(articulacion[2].y - articulacion[4].y, 2))));
+		alturaMM = RedonI(0.1 * altura * escala);
 		//alturaMM_2 = RedonI(0.1*(1140 + escala * (240-userTopRight.y) / (distancia*10.0)));
 
-		envergaduraMM = RedonI(0.1*escala*envergadura);
-		userCMx_PX	= articulacion[4].x;												//
-		userCMy_PX	= articulacion[4].y;												//
+		envergaduraMM = RedonI(0.1 * escala * envergadura);
+		userCMx_PX = articulacion[4].x;												//
+		userCMy_PX = articulacion[4].y;												//
 
 		// armo el esqueleto para el SALTO VERTICAL
 		const int esqueleto_ancho = 1;
 		if (ACTIVIDADelegida == SALTO_VERTICAL) {
 
-			Hueso(skeleton_mat, articulacion, 1, 2, _red,		esqueleto_ancho);		//head-neck
-			Hueso(skeleton_mat, articulacion, 2, 3, _yellow,	esqueleto_ancho + 1);	//neck-torso
-			Hueso(skeleton_mat, articulacion, 3, 4, _red,		esqueleto_ancho);		//torso-waist
+			Hueso(skeleton_mat, articulacion, 1, 2, _red, esqueleto_ancho);		//head-neck
+			Hueso(skeleton_mat, articulacion, 2, 3, _yellow, esqueleto_ancho + 1);	//neck-torso
+			Hueso(skeleton_mat, articulacion, 3, 4, _red, esqueleto_ancho);		//torso-waist
 																						//
-			Hueso(skeleton_mat, articulacion, 5, 6, _red,		esqueleto_ancho);		//left collar-shoulder
-			Hueso(skeleton_mat, articulacion, 6, 7, _red,		esqueleto_ancho);		//left shoulder-elbow
-			Hueso(skeleton_mat, articulacion, 7, 8, _red,		esqueleto_ancho);		//left elbow-wrist
-			Hueso(skeleton_mat, articulacion, 8, 9, _red,		esqueleto_ancho);		//left wrist-hand
+			Hueso(skeleton_mat, articulacion, 5, 6, _red, esqueleto_ancho);		//left collar-shoulder
+			Hueso(skeleton_mat, articulacion, 6, 7, _red, esqueleto_ancho);		//left shoulder-elbow
+			Hueso(skeleton_mat, articulacion, 7, 8, _red, esqueleto_ancho);		//left elbow-wrist
+			Hueso(skeleton_mat, articulacion, 8, 9, _red, esqueleto_ancho);		//left wrist-hand
 																						//
-			Hueso(skeleton_mat, articulacion, 11, 12, _red,		esqueleto_ancho);		//right collar-shoulder
-			Hueso(skeleton_mat, articulacion, 12, 13, _red,		esqueleto_ancho);		//right shoulder-elbow 
-			Hueso(skeleton_mat, articulacion, 13, 14, _red,		esqueleto_ancho);		//right shoulder-elbow 
-			Hueso(skeleton_mat, articulacion, 14, 15, _red,		esqueleto_ancho);		//right wrist-hand
+			Hueso(skeleton_mat, articulacion, 11, 12, _red, esqueleto_ancho);		//right collar-shoulder
+			Hueso(skeleton_mat, articulacion, 12, 13, _red, esqueleto_ancho);		//right shoulder-elbow 
+			Hueso(skeleton_mat, articulacion, 13, 14, _red, esqueleto_ancho);		//right shoulder-elbow 
+			Hueso(skeleton_mat, articulacion, 14, 15, _red, esqueleto_ancho);		//right wrist-hand
 																						//
-			Hueso(skeleton_mat, articulacion,  4, 21, _red,		esqueleto_ancho);		//right waist-hip
-			Hueso(skeleton_mat, articulacion, 21, 22, _red,		esqueleto_ancho);		//right hip-knee
-			Hueso(skeleton_mat, articulacion, 22, 23, _red,		esqueleto_ancho);		//right knee-ancle
+			Hueso(skeleton_mat, articulacion, 4, 21, _red, esqueleto_ancho);		//right waist-hip
+			Hueso(skeleton_mat, articulacion, 21, 22, _red, esqueleto_ancho);		//right hip-knee
+			Hueso(skeleton_mat, articulacion, 22, 23, _red, esqueleto_ancho);		//right knee-ancle
 																						//
-			Hueso(skeleton_mat, articulacion,  4, 17, _red,		esqueleto_ancho);		//left waist-hip
-			Hueso(skeleton_mat, articulacion, 17, 18, _red,		esqueleto_ancho);		//left hip-knee
-			Hueso(skeleton_mat, articulacion, 18, 19, _red,		esqueleto_ancho);		//left knee-ancle	
+			Hueso(skeleton_mat, articulacion, 4, 17, _red, esqueleto_ancho);		//left waist-hip
+			Hueso(skeleton_mat, articulacion, 17, 18, _red, esqueleto_ancho);		//left hip-knee
+			Hueso(skeleton_mat, articulacion, 18, 19, _red, esqueleto_ancho);		//left knee-ancle	
 
-			Hueso(skeleton_mat, articulacion, 23, 24, _red,		esqueleto_ancho + 2);	//right knee-ancle
-			Hueso(skeleton_mat, articulacion, 19, 20, _red,		esqueleto_ancho + 2);	//left knee-ancle	
+			Hueso(skeleton_mat, articulacion, 23, 24, _red, esqueleto_ancho + 2);	//right knee-ancle
+			Hueso(skeleton_mat, articulacion, 19, 20, _red, esqueleto_ancho + 2);	//left knee-ancle	
 
 			//  algunos arcos internos
 			ang_l_codo = Arco(skeleton_mat, 6, 7, 8, _black, -1);		// codo izquierdo del usuario de frente a la cámara		
@@ -1553,11 +1570,11 @@ inline void NuiTrack::drawSkeleton()
 			//ang_r_hombro	= Arco(skeleton_mat,  11, 12, 13, _yellow, -1);		// hombro derecho
 
 		}
-		
+
 
 		//	JUEGUITO CON LOS CÍRCULOS
 		//	si la muñeca derecha lo toca... cambia de color y si la mantiene 2 segundos y la otra mano está por encima, lo puede mover		
-		if (ACTIVIDADelegida == JUEGOS) {	
+		if (ACTIVIDADelegida == JUEGOS) {
 			//	inicialmente CICULOcont es -1, acá toma el valor inicial
 			if (CIRCULOcont < 0) {																			//	después de un tiempo que estoy arriba
 				// entonces tomo del torso a la derecha y abajo
@@ -1570,7 +1587,7 @@ inline void NuiTrack::drawSkeleton()
 			//	PARA MANO IZQUIERDA
 			if ((abs(articulacion[9].x - centro.x) < 25) && (abs(articulacion[9].y - centro.y) < 25)) {		//	si me acerco con la mano izq...
 				cv::circle(skeleton_mat, centro, 8, _yellow, -2);											//	el verde cambia a amarillo
-				CIRCULOcont++;			
+				CIRCULOcont++;
 				if (CIRCULOcont > 45) {																		//	después de un tiempo que estoy arriba
 					VENTANAinteractiva = true;
 					/*
@@ -1578,7 +1595,7 @@ inline void NuiTrack::drawSkeleton()
 						centro = cv::Point(articulacion[9].x, articulacion[9].y);							//	me lo llevo a la mano a otro lado
 						cv::circle(skeleton_mat, centro, 8, _fucsia, -2);									//	círculo fucsia
 						//VENTANAinteractiva = true;
-					}	
+					}
 					*/
 				}
 			}
@@ -1604,20 +1621,20 @@ inline void NuiTrack::drawSkeleton()
 
 					switch (MENUmano) {
 					case 0:		//			vertical
-						ACTIVIDADelegida	= SALTO_VERTICAL;						
-						VENTANAinteractiva	= false;
+						ACTIVIDADelegida = SALTO_VERTICAL;
+						VENTANAinteractiva = false;
 						break;
 					case 1:		//			largo
-						ACTIVIDADelegida	= SALTO_VERTICAL;						
-						VENTANAinteractiva	= false;
+						ACTIVIDADelegida = SALTO_VERTICAL;
+						VENTANAinteractiva = false;
 						break;
 					case 2:		//			seguir jugando
-						ACTIVIDADelegida	= JUEGOS;						
-						VENTANAinteractiva	= false;
+						ACTIVIDADelegida = JUEGOS;
+						VENTANAinteractiva = false;
 						break;
 					case 3:		//			reset records
 						limpiar_records();
-						VENTANAinteractiva	= false;
+						VENTANAinteractiva = false;
 						break;
 					case 4:		//			ayuda
 						if (AYUDA_activado) {
@@ -1632,12 +1649,12 @@ inline void NuiTrack::drawSkeleton()
 						VENTANAinteractiva = false;
 						break;
 					}
-					
+
 					/*
 					if (articulacion[9].y < articulacion[15].y) {
 						//centro2 = cv::Point(articulacion[15].x, articulacion[15].y);						//	me lo llevo a la mano a otro lado
 						cv::circle(skeleton_mat, centro2, 8, _fucsia, -2);									//	círculo fucsia
-											
+
 						//
 						//	con esta opción voy a cambiar el selector validado.
 						//SALTOstatus = 1;
@@ -1705,7 +1722,7 @@ inline void NuiTrack::drawSkeleton()
 			}
 		}
 
-		
+
 		// algunos cambios dependiendo de los ángulos
 		// 1) si los codos son cero hago como un hueso más grande desde la muñeca al hombro
 		//if (abs(ang_l_codo - 90.0) < 45.00) {
@@ -1714,20 +1731,20 @@ inline void NuiTrack::drawSkeleton()
 			//distance	= depth_mat.at<uint16_t>(articulacion[7]);
 			//cv::putText(skeleton_mat, std::to_string(distance), (articulacion[7]+cv::Point(60, 60)), cv::FONT_HERSHEY_TRIPLEX, 0.6, _black, 1, cv::LINE_AA);			
 		//}
-		
+
 		/*
 		if (abs(articulacion[12].y - articulacion[14].y) < 4.00) {
 			Hueso(skeleton_mat, articulacion, 12, 14, _white, 7);	//	hago com un hueso más grande en blanco
 			// aprovecho y reseteo el maximo del salto
 			SALTOrecord  = 0;
 			SALTOmax     = 3000;
-			repeticiones = 0;			
+			repeticiones = 0;
 			//	enciendo el cronómetro
 			if (CONTANDO == false) {
 				CONTANDO	= true;		//	contando a true
 				t_cur		= clock();	//	y reseteo
 			}
-			
+
 		}
 		*/
 
@@ -1749,7 +1766,7 @@ inline void NuiTrack::drawSkeleton()
 		}*/
 
 		//cv::putText(skeleton_mat, std::to_string(skeleton_mat.type()), cv::Point(200, 200), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _red, 1, cv::LINE_AA);
-		
+
 		//cv::ellipse(skeleton_mat, articulacion[7], cv::Size(30, 30), ANGrot, ANGi, ANGf, _yellow, 2, 8);
 		//cv::line(skeleton_mat, articulacion[3], articulacion[4], cv::Scalar(0, 0, 255), 3);
 
@@ -1758,14 +1775,17 @@ inline void NuiTrack::drawSkeleton()
 		//Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 3);	//	línea de hombros
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[06].real.z)), cv::Point(articulacion[06].x - 20, articulacion[06].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[12].real.z)), cv::Point(articulacion[12].x + 20, articulacion[12].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
-	
+
 		//Hueso(skeleton_mat, articulacion, 17, 21, _red, esqueleto_ancho + 3);	//	línea de caderas
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[17].real.z)), cv::Point(articulacion[17].x - 20, articulacion[17].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[21].real.z)), cv::Point(articulacion[21].x + 20, articulacion[21].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
-	
+
 		//Hueso(skeleton_mat, articulacion, 19, 23, _red, esqueleto_ancho + 3);	//	línea de pies
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[19].real.z)), cv::Point(articulacion[19].x - 20, articulacion[19].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[23].real.z)), cv::Point(articulacion[23].x + 20, articulacion[23].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
+
+		DIF_mano_cabezaCM = RedonI(0.1 * abs(artFULL[1].real.x - artFULL[15].real.x));
+		DIST_mano_cabezaCM = RedonI(0.5 * 0.1 * abs(artFULL[1].real.x + artFULL[15].real.x));
 		if (ACTIVIDADelegida == MANO_DERECHA) {
 			int esqueleto_ancho = 1;
 			Hueso(skeleton_mat, articulacion, 1, 2, _red, esqueleto_ancho);		//head-neck
@@ -1793,21 +1813,21 @@ inline void NuiTrack::drawSkeleton()
 			Hueso(skeleton_mat, articulacion, 23, 24, _red, esqueleto_ancho + 2);	//right knee-ancle
 			Hueso(skeleton_mat, articulacion, 19, 20, _red, esqueleto_ancho + 2);	//left knee-ancle
 			//Band_Derecha = 0;
-			
+
 			switch (Band_Derecha) {
 			case 0:
-					DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
 				if ((DifHombrosMD < UmbralHombrosMD))
 				{
 					Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
 					Band_Derecha = 1;	//	paso al estado 1 buscando estabilidad de la lectura
 					ContDerecha++;
 					if (ContDerecha > stableDerecha) {
-						Band_Derecha = 2;	
-					}					
+						Band_Derecha = 2;
+					}
 				}
 				else {
-					if ((DifHombrosMD < UmbralHombrosMD)) 
+					if ((DifHombrosMD < UmbralHombrosMD))
 					{
 						Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
 						Band_Derecha = 1;	//	paso al estado 1 buscando estabilidad de la lectura
@@ -1821,16 +1841,16 @@ inline void NuiTrack::drawSkeleton()
 						Band_Derecha = 0;
 						ContDerecha = 0;
 					}
-					
+
 				}
-				break;	
+				break;
 			case 1:
 				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
 				if ((DifHombrosMD < UmbralHombrosMD)) {
 					Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
 					ContDerecha++;
-					if (ContDerecha >= stableDerecha) {
-						Band_Derecha = 2;	
+					if (ContDerecha > stableDerecha) {
+						Band_Derecha = 2;
 					}
 				}
 				else {
@@ -1848,30 +1868,35 @@ inline void NuiTrack::drawSkeleton()
 						Band_Derecha = 0;
 						ContDerecha = 0;
 					}
-					
+
 				}
 				break;
-			case 2:	
+			case 2:
 				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
 				if ((DifHombrosMD < UmbralHombrosMD))
 				{
-					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);	
+					cabeza_base = artFULL[1].real.y;
+					cabeza_max = RedonI(cabeza_base + Umbralreferencia);
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);
 					ContDerecha++;
-					if (ContDerecha > stableDerecha) {
-						Band_Derecha = 2;
-						ContDerecha++;
-					}
-				}
-				else {
-					Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
-					Band_Derecha = 0;
-					ContDerecha = 0;
-				}
 				
-
+					//if ((ContDerecha > stableDerecha)) //&& (artFULL[15].real.y > cabeza_max)) {
+						//Band_Derecha = 2;
+							if ((artFULL[15].real.y > cabeza_max)) {
+								bandera_contador = 0;
+								Band_Derecha = 3;
+							}
+					
+					else {
+						Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
+						Band_Derecha = 0; // Vuelvo al principio
+						ContDerecha = 0;
+					}
+					break;
+				}
 			}
 		}
-
+		
 			
 		//	algunas variables internas del salto
 		int		DIFhombrosCM	=  00;	//	diferencia entre los hombros 6 y 12 en z en CM
@@ -1941,7 +1966,7 @@ inline void NuiTrack::drawSkeleton()
 					}
 					else 
 					{
-						//						pero si no estamos bien orientados, los huevos de hombro y cadera se ven rojos...
+						//						pero si no estamos bien orientados, los huesos del hombro y cadera se ven rojos...
 						//
 						if (DIFhombrosCM < DIFumbralCM) {		//	hombros torcidos derecha/izquierda? 
 							Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3);		//	línea de hombros correcta, fluo
