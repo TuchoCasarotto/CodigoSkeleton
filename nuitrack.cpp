@@ -160,20 +160,22 @@ int Band_Derecha = 0;
 int DifHombrosMD = 0;
 int UmbralHombrosMD = 05;
 int ContDerecha = 0;
-int stableDerecha = 100;
+int stableDerecha = 75;
 int indice_mano = 0;
 float levantadas[10];
 float tiempo_levantadas[10];
-int levante_record = 0;
+double levante_record = 0;
 cv::Point Pos_Cabeza1;
 cv::Point Pos_Mano_Derecha;
 int DIF_mano_cabezaCM = 0;
 int DIST_mano_cabezaCM = 0;
 int cabeza_base = 0;
-int Umbralreferencia = 50;
+int Umbralreferencia = 30;
 int cabeza_max = 0;
 int contador_mano_arriba = 0;
 bool bandera_contador = 0;
+int derecha_repeticiones = 0;
+double tiempobase = 0;
 
 //	medición del salto vertical
 bool		SALTANDO			= false;	//
@@ -680,11 +682,13 @@ int NuiTrack::run()
 			case FLEXIONES:			//	4     
 			case MANO_DERECHA:     // 0
 				ImGui::Text("Tiempo mano: "); ImGui::SameLine();
+				ImGui::TextColored(ImVec4(0.9f, 0.5f, 0.0f, 1.0f), "%05.3fs", (tiempobase));
 				break;
-			}						
+			}
+
 
 			//ImGui::Text("Altura obtenida: "); ImGui::SameLine();
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), " %03.0fmm", RedonD(SALTO));				//	altura
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), " %03.0fmm", RedonD(SALTO)); //	altura
 			ImGui::Text("Tiempo de vuelo:  "); ImGui::SameLine();
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%05.3fs", /*RedonD(1.0 * SALTOtiempo)*/ SALTOtiempo);	//	tiempo (ver si es eso o el doble)
 			ImGui::PopFont();																			//  vuelvo a 20
@@ -725,8 +729,9 @@ int NuiTrack::run()
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
 			case MANO_DERECHA:       //0
-				ImGui::Text("Veces que sube mano: "); ImGui::SameLine();
-
+				ImGui::Text("Veces que suben manos: "); ImGui::SameLine();
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), " %03.0dmm", contador_mano_arriba);
+				//ImGui::PopFont();
 				break;
 			}
 
@@ -840,11 +845,11 @@ int NuiTrack::run()
 		// **********************************************************************************
 		//  ventana de la AYUDA
 		//	se maneja directo desde un checkbox 
-		if (AYUDA_activado) {			
+		if (AYUDA_activado) {
 			ImGui::SetNextWindowPos(ImVec2(10, 35), ImGuiCond_Always);		//  posición			
 			ImGui::SetNextWindowSize(ImVec2(550, 80), ImGuiCond_Always);	//  tamaño
 			// 
-			ImGui::Begin("Ayuda");			
+			ImGui::Begin("Ayuda");
 			ImGui::PushFont(font40);
 			switch (ACTIVIDADelegida) {
 			case SALTO_VERTICAL:	//	para el salto vertical
@@ -894,13 +899,28 @@ int NuiTrack::run()
 					ImGui::TextColored(ImVec4(0.95f, 0.12f, 0.04f, 1.0f), "Hombros rectos por favor");// bordo
 					break;
 				case 1:          // Debe levantar la mano Derecha
-					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "BIEN, Quieto!!");
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "BIEN, No se mueva!!");
 					break;
 				case 2:          // Debe levantar la mano Derecha
 					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Levante la mano Derecha");
 					break;
 				case 3:
-					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "MUY BIEN !");
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Mano Derecha Levantada !");
+					break;
+				case 4:
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Levante la Mano Izquierda !");
+					break;
+
+				case 5:
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Mano Izquierda Levantada !");
+					break;
+                
+				case 6: 
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Levante las 2 manos !");
+					break;
+
+				case 7:
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Usted Levanto las 2 manos!!");
 					break;
 				}
 			}
@@ -1823,17 +1843,17 @@ inline void NuiTrack::drawSkeleton()
 					Band_Derecha = 1;	//	paso al estado 1 buscando estabilidad de la lectura
 					ContDerecha++;
 					if (ContDerecha > stableDerecha) {
-						Band_Derecha = 2;
+						Band_Derecha = 1;
 					}
 				}
 				else {
 					if ((DifHombrosMD < UmbralHombrosMD))
-					{
+				       {
 						Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
 						Band_Derecha = 1;	//	paso al estado 1 buscando estabilidad de la lectura
 						ContDerecha++;
 						if (ContDerecha > stableDerecha) {
-							Band_Derecha = 2;
+							Band_Derecha = 1;
 						}
 					}
 					else {
@@ -1851,25 +1871,15 @@ inline void NuiTrack::drawSkeleton()
 					ContDerecha++;
 					if (ContDerecha > stableDerecha) {
 						Band_Derecha = 2;
+						ContDerecha = 0;
 					}
 				}
 				else {
-					if ((DifHombrosMD < UmbralHombrosMD))
-					{
-						Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
-						ContDerecha++;
-						if (ContDerecha > stableDerecha) {
-							Band_Derecha = 2;
-							ContDerecha++;
-						}
-					}
-					else {
-						Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
-						Band_Derecha = 0;
-						ContDerecha = 0;
-					}
-
+					Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
+					Band_Derecha = 0;
+					ContDerecha = 0;
 				}
+
 				break;
 			case 2:
 				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
@@ -1878,24 +1888,139 @@ inline void NuiTrack::drawSkeleton()
 					cabeza_base = artFULL[1].real.y;
 					cabeza_max = RedonI(cabeza_base + Umbralreferencia);
 					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);
+
 					ContDerecha++;
-				
-					//if ((ContDerecha > stableDerecha)) //&& (artFULL[15].real.y > cabeza_max)) {
-						//Band_Derecha = 2;
-							if ((artFULL[15].real.y > cabeza_max)) {
-								bandera_contador = 0;
-								Band_Derecha = 3;
-							}
-					
+					if (ContDerecha > stableDerecha)
+						Band_Derecha = 3;
+					 
+					if ((artFULL[15].real.y > cabeza_max)) {
+						bandera_contador = 0;
+						Band_Derecha = 3;
+					}
+
 					else {
 						Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
 						Band_Derecha = 0; // Vuelvo al principio
 						ContDerecha = 0;
 					}
+
+				}
+
+				break;
+			case 3:
+				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+				if ((DifHombrosMD < UmbralHombrosMD))
+				{
+					cabeza_base = artFULL[1].real.y;
+					cabeza_max = RedonI(cabeza_base + Umbralreferencia);
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);
+
+					if ((artFULL[15].real.y < cabeza_max)) {
+						bandera_contador = 0;
+						Band_Derecha = 4;
+						Hueso(skeleton_mat, articulacion, 12, 13, _black, esqueleto_ancho + 5);
+						Hueso(skeleton_mat, articulacion, 14, 15, _black, esqueleto_ancho + 5);
+					}
+					else {
+						Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
+						Band_Derecha = 0; // Vuelvo al principio
+						ContDerecha = 0;
+					}
+					if ((artFULL[15].real.y > cabeza_max)) {
+						bandera_contador = 0;
+						Band_Derecha = 3;
+						Hueso(skeleton_mat, articulacion, 12, 13, _green, esqueleto_ancho + 5);
+						Hueso(skeleton_mat, articulacion, 14, 15, _green, esqueleto_ancho + 5);
+					}
+				}
+
+				break;
+
+			case 4:
+				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+				if ((DifHombrosMD < UmbralHombrosMD))
+				{
+					cabeza_base = artFULL[1].real.y;
+					cabeza_max = RedonI(cabeza_base + Umbralreferencia);
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);
+
+					if ((artFULL[9].real.y > cabeza_max)) {
+						bandera_contador = 0;
+						Band_Derecha = 5;
+					}
+					else {
+						if ((artFULL[9].real.y < cabeza_max)) {
+							bandera_contador = 0;
+							Band_Derecha = 4;
+						}
+					}
 					break;
+				}
+
+			case 5:
+				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+				if ((DifHombrosMD < UmbralHombrosMD))
+				{
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);
+					if ((artFULL[9].real.y < cabeza_max)) {
+						bandera_contador = 0;
+						Band_Derecha = 6;
+					}
+					break;
+				}
+
+
+			case 6:
+
+				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+				if ((DifHombrosMD < UmbralHombrosMD))
+				{
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);
+					if ((artFULL[9].real.y > cabeza_max) && (artFULL[15].real.y > cabeza_max)) {
+						bandera_contador = 1;
+						t_cur = clock();
+						CONTANDO = true;
+						Band_Derecha = 7;
+						if (bandera_contador == 1)
+							contador_mano_arriba++;
+						else 
+							bandera_contador == 0;	
+					}
+					break;
+
+
+			case 7:
+				DifHombrosMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+				if ((DifHombrosMD < UmbralHombrosMD))
+				{
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);
+					if ((artFULL[9].real.y < cabeza_max) && (artFULL[15].real.y < cabeza_max)) {
+						bandera_contador = 0;
+						//contador_mano_arriba++;
+						CONTANDO = false;
+						levante_record = (double(clock()) - double(t_cur)) / double(CLOCKS_PER_SEC);
+						tiempo_levantadas[derecha_repeticiones] = levante_record;
+						if (levante_record > tiempobase) {
+						tiempobase = levante_record;
+						derecha_repeticiones++;
+					             }
+						Band_Derecha = 2;
+					}
+					
+					else {
+						CONTANDO = true;
+						Band_Derecha = 7;
+					}
+					break;
+				}
 				}
 			}
 		}
+		
+	
+
+
+
 		
 			
 		//	algunas variables internas del salto
