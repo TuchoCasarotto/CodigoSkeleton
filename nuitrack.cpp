@@ -1861,7 +1861,7 @@ inline void NuiTrack::drawSkeleton()
 					Hueso(skeleton_mat, articulacion, 17, 21, _red, esqueleto_ancho + 3);	//línea de caderas
 					Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
 					Band_Balanceo = 0;
-					//contador_angulo_derecha = 0;
+					
 				}
 				break;
 			}
