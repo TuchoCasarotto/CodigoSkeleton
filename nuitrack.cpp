@@ -1839,7 +1839,7 @@ inline void NuiTrack::drawSkeleton()
 				//dist = RedonD(sqrt(pow(artFULL[2].real.x - artFULL[4].real.x, 2) + pow(artFULL[2].real.y - artFULL[4].real.y, 2)));
 
 				DifhombrosAMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
-				//contador_angulo_derecha = 0;
+				
 				if ((DifhombrosAMD < UmbralHombrosAMD))
 				{
 					Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
@@ -1864,19 +1864,6 @@ inline void NuiTrack::drawSkeleton()
 						Band_Balanceo = 0;
 						//contador_angulo_derecha = 0;
 					}
-
-
-					//if ((dist < Umbral_distancia) || (dist > Umbral_distancia)) {
-						//Band_Balanceo = 1;
-						//Hueso(skeleton_mat, articulacion, 2, 4, _red, esqueleto_ancho + 5);
-					//}
-					//else {
-						//contador_angulo_derecha++;
-						//if (contador_angulo_derecha > stableanguloderecha) {
-							//Band_Balanceo = 2;
-							//Hueso(skeleton_mat, articulacion, 2, 4, _green, esqueleto_ancho + 5);
-						//}
-					//}
 					break;
 				}
 			}
