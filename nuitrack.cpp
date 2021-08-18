@@ -154,14 +154,20 @@ int			CIRCULO2cont		= -1;
 cv::Point	centro;
 cv::Point	centro2;
 
-// Actividad Balanceo del USER
+// Actividad de Hombros del USER
 int Band_Balanceo = 0;
-int DifhombrosAMD = 0;
-int UmbralHombrosAMD = 04;
+int Difhombros = 0;
+int UmbralHombrosAMD = 05;
 int stableanguloderecha = 50;
 int contador_angulo_derecha = 0;
 int Umbral_distancia = 10;
 int stableanguloderechacaso1 = 2000;
+
+// Actividad de caderas del USER
+//int Band_Balanceo = 0;
+int DifCaderasCM = 00;
+int Distancia_CaderasCM = 00;
+
 
 
 //	medición del salto vertical
@@ -883,14 +889,11 @@ int NuiTrack::run()
 			case Detección_de_Distancia:  // Para la detección de la mano derecha 
 				switch (Band_Balanceo) {
 				case 0:          // Hombros derechos
-					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Hombros rectos por favor");// 
+					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Caderas y hombros rectos Por favor");// 
 					break;
 				case 1: // Mantenerse en la misma distancia
 					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Muy bien!! ");// 
 					break;
-				//case 2: // Mantenerse en la misma distancia
-					//ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Enderece sus Hombros");// 
-					//break;			
 				}
 			}
 
@@ -1806,71 +1809,67 @@ inline void NuiTrack::drawSkeleton()
 
 			switch (Band_Balanceo) {
 			case 0:
-				DifhombrosAMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
-				if ((DifhombrosAMD < UmbralHombrosAMD))
+				DifCaderasCM = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[17].real.z));
+				Difhombros = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+				if ((DifCaderasCM < UmbralHombrosAMD) && (Difhombros < UmbralHombrosAMD))
 				{
+					Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 5);	//	línea de caderas
 					Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
+
 					contador_angulo_derecha++;
+
 					if (contador_angulo_derecha > stableanguloderecha)
 						Band_Balanceo = 1;
-
 				}
+
+				if ((DifCaderasCM < UmbralHombrosAMD) && (Difhombros < UmbralHombrosAMD))
+
+				{
+					Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 5);	//	línea de caderas
+					Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
+					//Band_angulo_Derecha = 1;	//	paso al estado 1 buscando estabilidad de la lectura
+					contador_angulo_derecha++;
+
+					if (contador_angulo_derecha > stableanguloderecha)
+						Band_Balanceo = 1;
+				}
+
 				else {
-					if ((DifhombrosAMD < UmbralHombrosAMD))
-
-					{
-						Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
-						//Band_angulo_Derecha = 1;	//	paso al estado 1 buscando estabilidad de la lectura
-						contador_angulo_derecha++;
-						if (contador_angulo_derecha > stableanguloderecha) {
-							Band_Balanceo = 1;
-						}
-					}
-					else {
-						Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
-						Band_Balanceo = 0;
-						contador_angulo_derecha = 0;
-					}
-					break;
+					Hueso(skeleton_mat, articulacion, 21, 17, _red, esqueleto_ancho + 5);	//	línea de caderas
+					Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
+					Band_Balanceo = 0;
+					contador_angulo_derecha = 0;
 				}
+				break;
+
 
 
 			case 1:
-				//dist = RedonD(sqrt(pow(artFULL[2].real.x - artFULL[4].real.x, 2) + pow(artFULL[2].real.y - artFULL[4].real.y, 2)));
+				DifCaderasCM = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[17].real.z));
+				Difhombros = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+				if ((DifCaderasCM < UmbralHombrosAMD) && (Difhombros < UmbralHombrosAMD))
 
-				DifhombrosAMD = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
-				
-				if ((DifhombrosAMD < UmbralHombrosAMD))
 				{
+					Hueso(skeleton_mat, articulacion, 17, 21, _fluo, esqueleto_ancho + 3);	//línea de caderas
 					Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
-					contador_angulo_derecha++;
-					if (contador_angulo_derecha > stableanguloderechacaso1)
-						Band_Balanceo = 1;
 
+					contador_angulo_derecha++;
+					if (contador_angulo_derecha > stableanguloderecha)
+						Band_Balanceo = 1;
 				}
 				else {
-					if ((DifhombrosAMD < UmbralHombrosAMD))
-
-					{
-						Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);	//	línea de hombros
-						contador_angulo_derecha++;
-						if (contador_angulo_derecha > stableanguloderecha) {
-							Band_Balanceo = 1;
-						}
-
-					}
-					else {
-						Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
-						Band_Balanceo = 0;
-						//contador_angulo_derecha = 0;
-					}
-					break;
+					Hueso(skeleton_mat, articulacion, 17, 21, _red, esqueleto_ancho + 3);	//línea de caderas
+					Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);	//	línea de hombros
+					Band_Balanceo = 0;
+					//contador_angulo_derecha = 0;
 				}
+				break;
 			}
 		}
-							
+					 
+				 
 		
-		
+
 		
 	
 				
