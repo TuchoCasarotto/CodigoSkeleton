@@ -1829,7 +1829,8 @@ inline void NuiTrack::drawSkeleton()
 					Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 5);	//	línea de hombros
 					//Band_angulo_Derecha = 1;	//	paso al estado 1 buscando estabilidad de la lectura
 					contador_angulo_derecha++;
-
+					
+					// 
 					if (contador_angulo_derecha > stableanguloderecha)
 						Band_Balanceo = 1;
 				}
