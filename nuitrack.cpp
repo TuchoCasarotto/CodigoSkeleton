@@ -133,7 +133,7 @@ const int	SALTO_LARGO			= 1;		//
 const int	JUEGOS				= 2;		// es la forma de seleccionar cuál está activo
 const int	POSTURAS			= 3;		// para detectar posturas
 const int	FLEXIONES			= 4;		// contador de flexiones con una mano
-const int   Detección_de_Distancia        = 0;        // Detección del angulo de la mano derecha
+const int   Elevaciones_Frontales        = 0;        // Actividad para el trabajo de hombros
 
 
 //	FIJAR ACTIVIDAD INICIAL
@@ -526,7 +526,7 @@ int NuiTrack::run()
 
 		//	actividades principales del programa
 		
-		ImGui::RadioButton("Deteccion distancia", &ACTIVIDADelegida, 0);
+		ImGui::RadioButton("Elevaciones Frontales", &ACTIVIDADelegida, 0);
 		ImGui::SameLine();
 		ImGui::RadioButton("Salto Vertical",		&ACTIVIDADelegida, 5); 
 		ImGui::SameLine();
@@ -590,11 +590,11 @@ int NuiTrack::run()
 			}
 			break;
 
-		case  Detección_de_Distancia:   //0 Actividad de detección de distancia
+		case  Elevaciones_Frontales:   //0 Actividad de detección de distancia
 
-			  ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Deteccion de Distancia");
-			  if (ACTIVIDADprevia != Detección_de_Distancia) {                                      // si viene otra actividad
-				  ACTIVIDADprevia = Detección_de_Distancia;                                         // Actualizo
+			  ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Elevaciones_Frontales");
+			  if (ACTIVIDADprevia != Elevaciones_Frontales) {                                      // si viene otra actividad
+				  ACTIVIDADprevia = Elevaciones_Frontales;                                         // Actualizo
 				  limpiar_records();                                                      // limpio records
 				  SALTOstatus = 0;                                                        // Mano derecha listo para empezar
 				  CONTANDO = false;                      
@@ -673,7 +673,7 @@ int NuiTrack::run()
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4     
-			case Detección_de_Distancia:     // 0
+			case Elevaciones_Frontales:     // 0
 				//ImGui::Text("Tiempo mano: "); ImGui::SameLine();
 				//ImGui::TextColored(ImVec4(0.9f, 0.5f, 0.0f, 1.0f), "%05.3fs", (tiempobase));
 				break;
@@ -721,7 +721,7 @@ int NuiTrack::run()
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
-			case Detección_de_Distancia:       //0
+			case Elevaciones_Frontales:       //0
 				//ImGui::Text("Veces que suben manos: "); ImGui::SameLine();
 				//ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), " %03.0dmm", contador_mano_arriba);
 				//ImGui::PopFont();
@@ -798,7 +798,7 @@ int NuiTrack::run()
 				case JUEGOS:			//	2
 				case POSTURAS:			//	3
 				case FLEXIONES:			//	4
-				case Detección_de_Distancia:      // 0
+				case Elevaciones_Frontales:      // 0
 
 					break;
 				}
@@ -886,7 +886,7 @@ int NuiTrack::run()
 			case JUEGOS:			//	para los juegos interactivos
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "toque los circulos");
 				break;
-			case Detección_de_Distancia:  // Para la detección de la mano derecha 
+			case Elevaciones_Frontales:  // Para la detección de la mano derecha 
 				switch (Band_Balanceo) {
 				case 0:          // Hombros derechos
 					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Caderas y hombros rectos Por favor");// 
@@ -977,7 +977,7 @@ int NuiTrack::run()
 
 				//	sobre la mano izquierda aparece un menú con las siguientes opciones
 				//ImGui::Text("MENUmano --> %d",MENUmano);
-				ImGui::RadioButton("Detección_de_Distancia", &MENUmano, 0);
+				ImGui::RadioButton("Elevaciones Frontales", &MENUmano, 0);
 				ImGui::RadioButton("Salto Vertical",	&MENUmano, 5);
 				ImGui::RadioButton("Salto en Largo",	&MENUmano, 1);
 				ImGui::RadioButton("Selección",			&MENUmano, 2);
@@ -1778,7 +1778,7 @@ inline void NuiTrack::drawSkeleton()
 
 		
 		
-		if (ACTIVIDADelegida == Detección_de_Distancia) {
+		if (ACTIVIDADelegida == Elevaciones_Frontales) {
 			int esqueleto_ancho = 1;
 			Hueso(skeleton_mat, articulacion, 1, 2, _red, esqueleto_ancho);		//head-neck
 			Hueso(skeleton_mat, articulacion, 2, 3, _yellow, esqueleto_ancho + 1);	//neck-torso
