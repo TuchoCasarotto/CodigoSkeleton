@@ -1776,8 +1776,8 @@ inline void NuiTrack::drawSkeleton()
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[19].real.z)), cv::Point(articulacion[19].x - 20, articulacion[19].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[23].real.z)), cv::Point(articulacion[23].x + 20, articulacion[23].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 
-		//DIF_mano_cabezaCM = RedonI(0.1 * abs(artFULL[1].real.x - artFULL[15].real.x));
-		//DIST_mano_cabezaCM = RedonI(0.5 * 0.1 * abs(artFULL[1].real.x + artFULL[15].real.x));
+		
+		
 		if (ACTIVIDADelegida == Detección_de_Distancia) {
 			int esqueleto_ancho = 1;
 			Hueso(skeleton_mat, articulacion, 1, 2, _red, esqueleto_ancho);		//head-neck
