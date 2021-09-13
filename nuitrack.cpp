@@ -70,8 +70,6 @@ static void		HelpMarker(const char* desc);
 void			limpiar_records(void);
 
 
-
-
 //  cv::Point articulacion[42]; B G R
 cv::Scalar _cyan	= cv::Scalar(222, 222, 0);
 cv::Scalar _green	= cv::Scalar(0, 255, 0);
@@ -130,15 +128,16 @@ double		ang_l_codo, ang_r_codo, ang_l_hombro, ang_r_hombro;
 //	bandera principales
 
 //	ACTIVIDADES ACTUALES: constantes de cada tarea
-const int	SALTO_VERTICAL		= 0;		// 
+const int	SALTO_VERTICAL		= 5;		// 
 const int	SALTO_LARGO			= 1;		//
 const int	JUEGOS				= 2;		// es la forma de seleccionar cuál está activo
 const int	POSTURAS			= 3;		// para detectar posturas
 const int	FLEXIONES			= 4;		// contador de flexiones con una mano
+const int   Elevaciones_Frontales        = 0;        // Actividad para el trabajo de hombros
 
 
 //	FIJAR ACTIVIDAD INICIAL
-int			ACTIVIDADelegida	= 2;		//	0 vertical 1 largo 2 juegos
+int			ACTIVIDADelegida	= 2;		//	0 mano derecha 1 largo 2 juegos
 int			ACTIVIDADprevia		= 0;		//
 
 bool		AYUDA_activado		= true;		//	ventanida de ayuda arriba a la izquierda
@@ -154,6 +153,75 @@ int			CIRCULOcont			= -1;
 int			CIRCULO2cont		= -1;
 cv::Point	centro;
 cv::Point	centro2;
+
+// Actividad de Hombros del USER
+int Band_Estados = 0;
+int Difhombros = 0;
+int cuello_base_izq = 0;
+int cuello_izquierdo = 0;
+int cadera_izquierda = 0;
+int muñeca_izquierda = 0;
+int UmbralHombrosE1 = 05;
+int UmbralCaderasE1 = 05;
+int UmbralHombrosE2 = 06;
+int UmbralCaderasE2 = 1;
+int UmbralHombrosE2AUX = 05;
+int Band_auxiliar_E3 = 0;
+int Band_auxiliar_E3IZQ = 0;
+int Band_aux_E3B = 0;
+int UmbralCuello = 02;
+int estado_estable_0 = 70;
+int contador_estado_0 = 0;
+int contador_estado_0b = 0;
+int estado_estable_0b = 100;
+int Umbral_E8_cadera_derecha = 01;
+int cont_aux = 0;
+int estable_aux = 50;
+int cont_est3 = 0;
+int estado_3 = 50;
+int umbral_cade_puño = 01;
+int contador_estado_1 = 0;
+int contador_estado_2 = 0;
+int contador_estado_3 = 0;
+int contador_estado_4 = 0;
+int contador_estado_5 = 0;
+int contador_estado_6 = 0;
+int contador_estado_7 = 0;
+int contador_estado_8 = 0;
+int estado_estable_1 = 70;
+int estado_estable_2 = 30;
+int estado_estable_3 = 80;
+int estado_estable_4 = 50;
+int estado_estable_5 = 100;
+int estado_estable_6 = 180;
+int estado_estable_7 = 30;
+int estado_estable_8 = 40;
+
+
+// Actividad de caderas del USER
+//int Band_Balanceo = 0;
+int DifCaderasCM = 00;
+int Distancia_CaderasCM = 00;
+int DifCaderasCMaux = 0;
+int DifHombrosCMaux = 0;
+
+// Variables Elevaciones Frontales Brazo Derecho
+int Umbral_Derecho = 1;
+int Cuello_Derecho = 0;
+int Cuello_base = 0;
+int muñeca_derecha = 0;
+int cont_retard_izq = 0;
+int estable_izq = 130;
+int cont_retard_der = 0;
+int cont_retard_E4 = 0;
+int estable_der = 20;
+int estable_der4 = 60;
+int cadera_derecha = 0;
+int cadera_derecha_umbral = 5;
+int puño_derecho = 0;
+int dif_cadera_puño = 0;
+
+
 
 
 //	medición del salto vertical
@@ -336,6 +404,7 @@ int NuiTrack::run()
 #endif
 	// Create window with graphics context
 	GLFWwindow* window = glfwCreateWindow(1280, 720, "INAUT PDTS 2019: Deteccion y medicion de movimiento", NULL, NULL);
+	//GLFWwindow* window = glfwCreateWindow(1130, 720, "INAUT PDTS 2019: Deteccion y medicion de movimiento", NULL, NULL);
 	glfwMaximizeWindow(window);
 	if (window == NULL)
 		return 1;
@@ -456,7 +525,8 @@ int NuiTrack::run()
 		// **********************************************************************************
 		//		VENTANA DE LA DERECHA CON TIEMPOS Y DATOS GENERALES
 		//
-		ImGui::SetNextWindowPos(ImVec2(1290, 5), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(1090, 5), ImGuiCond_Always);
+		//ImGui::SetNextWindowSize(ImVec2(610, 975), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(610, 975), ImGuiCond_Always);
 
 		//  título
@@ -467,7 +537,7 @@ int NuiTrack::run()
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Tiempo: %07.2f", tiempo_max);	//	
 				//	cronómetro
 		if (CONTANDO == true) {
-			tiempo_cur = (((double)(clock()) - (double)(t_cur)) / double(CLOCKS_PER_SEC));
+			tiempo_cur = (((double)(clock()) - (double)(t_cur)) / double(CLOCKS_PER_SEC)); // variable del cronómetro 
 		}				
 		ImGui::SameLine();
 		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 0.8f), "    Crono: %07.2f", tiempo_cur);
@@ -509,17 +579,21 @@ int NuiTrack::run()
 		
 
 		//	actividades principales del programa
-		ImGui::RadioButton("Salto Vertical",		&ACTIVIDADelegida, 0); 
+		
+		ImGui::RadioButton("Elevaciones Frontales", &ACTIVIDADelegida, 0);
+		ImGui::SameLine();
+		ImGui::RadioButton("Salto Vertical",		&ACTIVIDADelegida, 5); 
 		ImGui::SameLine();
 		ImGui::RadioButton("Salto en Largo",		&ACTIVIDADelegida, 1); 
 		ImGui::SameLine();
 		ImGui::RadioButton("Selección",				&ACTIVIDADelegida, 2); 
 		ImGui::SameLine();
 		ImGui::RadioButton("Posturas",				&ACTIVIDADelegida, 3);
+		
 
 
 		switch (ACTIVIDADelegida) {
-		case SALTO_VERTICAL:	//	0
+		case SALTO_VERTICAL:	//	5
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Salto Vertical");		//  yellow
 			if (ACTIVIDADprevia != SALTO_VERTICAL) {	//	si viene de otra actividad...
 				ACTIVIDADprevia = SALTO_VERTICAL;		//	actualizo previa
@@ -543,7 +617,7 @@ int NuiTrack::run()
 			if (ACTIVIDADprevia != JUEGOS) {											//	si viene de otra actividad...
 				ACTIVIDADprevia = JUEGOS;												//	actualizo previa
 				limpiar_records();														//	limpio records
-				SALTOstatus		= 0;													//	salto listo para empezar
+				SALTOstatus		= 0;													//	juegos listo para empezar
 				CONTANDO		= false;
 			}
 			break;
@@ -554,7 +628,7 @@ int NuiTrack::run()
 			if (ACTIVIDADprevia != POSTURAS) {											//	si viene de otra actividad...
 				ACTIVIDADprevia = POSTURAS;												//	actualizo previa
 				limpiar_records();														//	limpio records
-				SALTOstatus		= 0;													//	salto listo para empezar
+				SALTOstatus		= 0;													//	posturas listo para empezar
 				CONTANDO		= false;
 			}
 			break;
@@ -565,11 +639,21 @@ int NuiTrack::run()
 			if (ACTIVIDADprevia != FLEXIONES) {											//	si viene de otra actividad...
 				ACTIVIDADprevia = FLEXIONES;											//	actualizo previa
 				limpiar_records();														//	limpio records
-				SALTOstatus		= 0;													//	salto listo para empezar
+				SALTOstatus		= 0;													//	flexiones listo para empezar
 				CONTANDO		= false;
 			}
 			break;
 
+		case  Elevaciones_Frontales:   //0 Actividad de detección de distancia
+
+			  ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Elevaciones_Frontales");
+			  if (ACTIVIDADprevia != Elevaciones_Frontales) {                                      // si viene otra actividad
+				  ACTIVIDADprevia = Elevaciones_Frontales;                                         // Actualizo
+				  limpiar_records();                                                      // limpio records
+				  SALTOstatus = 0;                                                        // Mano derecha listo para empezar
+				  CONTANDO = false;                      
+			  }
+			  break;
 		}
 
 
@@ -634,7 +718,7 @@ int NuiTrack::run()
 			ImGui::PushFont(font24);																	//  cambio a 24
 			
 			switch (ACTIVIDADelegida) {
-			case SALTO_VERTICAL:	//	0
+			case SALTO_VERTICAL:	//	5
 				ImGui::Text("Altura obtenida: "); ImGui::SameLine();
 				break;
 			case SALTO_LARGO:		//	1
@@ -642,13 +726,16 @@ int NuiTrack::run()
 				break;
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
-			case FLEXIONES:			//	4
-
+			case FLEXIONES:			//	4     
+			case Elevaciones_Frontales:     // 0
+				//ImGui::Text("Tiempo mano: "); ImGui::SameLine();
+				//ImGui::TextColored(ImVec4(0.9f, 0.5f, 0.0f, 1.0f), "%05.3fs", (tiempobase));
 				break;
-			}						
+			}
+
 
 			//ImGui::Text("Altura obtenida: "); ImGui::SameLine();
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), " %03.0fmm", RedonD(SALTO));				//	altura
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), " %03.0fmm", RedonD(SALTO)); //	altura
 			ImGui::Text("Tiempo de vuelo:  "); ImGui::SameLine();
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%05.3fs", /*RedonD(1.0 * SALTOtiempo)*/ SALTOtiempo);	//	tiempo (ver si es eso o el doble)
 			ImGui::PopFont();																			//  vuelvo a 20
@@ -679,7 +766,7 @@ int NuiTrack::run()
 			ImGui::Separator();	
 
 			switch (ACTIVIDADelegida) {
-			case SALTO_VERTICAL:	//	0
+			case SALTO_VERTICAL:	//	5
 				ImGui::Text("Altura: "); ImGui::SameLine();
 				break;
 			case SALTO_LARGO:		//	1
@@ -688,7 +775,10 @@ int NuiTrack::run()
 			case JUEGOS:			//	2
 			case POSTURAS:			//	3
 			case FLEXIONES:			//	4
-
+			case Elevaciones_Frontales:       //0
+				ImGui::Text("Veces que suben manos: "); ImGui::SameLine();
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), " %03.0dmm", DifCaderasCMaux);
+				//ImGui::PopFont();
 				break;
 			}
 
@@ -753,7 +843,7 @@ int NuiTrack::run()
 			if (repeticiones < 40) {		//		esto hay que arreglarlo... corta a los 40 saltos
 
 				switch (ACTIVIDADelegida) {
-				case SALTO_VERTICAL:	//	0
+				case SALTO_VERTICAL:	//	5
 					ImGui::Text("Altura del Salto: "); 
 					break;
 				case SALTO_LARGO:		//	1
@@ -762,6 +852,7 @@ int NuiTrack::run()
 				case JUEGOS:			//	2
 				case POSTURAS:			//	3
 				case FLEXIONES:			//	4
+				case Elevaciones_Frontales:      // 0
 
 					break;
 				}
@@ -783,7 +874,7 @@ int NuiTrack::run()
 		//  posición
 		ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiCond_Always);
 		//  tamaño
-		ImGui::SetNextWindowSize(ImVec2(1280, 800), ImGuiCond_Always);		
+		ImGui::SetNextWindowSize(ImVec2(1080, 800), ImGuiCond_Always);		
         // 
 		ImGui::Begin("Camara 3D");
 		if (skeleton_mat.empty()) {
@@ -801,11 +892,11 @@ int NuiTrack::run()
 		// **********************************************************************************
 		//  ventana de la AYUDA
 		//	se maneja directo desde un checkbox 
-		if (AYUDA_activado) {			
+		if (AYUDA_activado) {
 			ImGui::SetNextWindowPos(ImVec2(10, 35), ImGuiCond_Always);		//  posición			
 			ImGui::SetNextWindowSize(ImVec2(550, 80), ImGuiCond_Always);	//  tamaño
 			// 
-			ImGui::Begin("Ayuda");			
+			ImGui::Begin("Ayuda");
 			ImGui::PushFont(font40);
 			switch (ACTIVIDADelegida) {
 			case SALTO_VERTICAL:	//	para el salto vertical
@@ -849,7 +940,41 @@ int NuiTrack::run()
 			case JUEGOS:			//	para los juegos interactivos
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "toque los circulos");
 				break;
+
+			case Elevaciones_Frontales:  // Para el trabajo de hombros con mancuernas 
+				switch (Band_Estados) {
+				case 0:          // Presentación de la actividad
+					ImGui::TextColored(ImVec4(1.0f, 0.1f, 0.04f, 1.0f), "Elevaciones Frontales");// 
+					break;
+				case 1: // Lograr la postura correcta
+					ImGui::TextColored(ImVec4(1.0f, 0.1f, 0.04f, 1.0f), "Espalda y hombros rectos ");// 
+					break;
+
+				case 2: // Comenzar con el brazo derecho
+					ImGui::TextColored(ImVec4(1.0f, 0.1f, 0.04f, 1.0f), "Levante la mancuerna ");// 
+					break;
+				case 3: // Mantenerlo recto 2 seg.
+					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Mantenga el brazo recto!! ");//
+					break;
+				case 4: // Fallo de la postura correcta, se inicializa la activdad
+					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Espalda y hombros rectos por favor !! ");//
+					break;
+				case 5: // Fallo del ejercicio, se inicializa la actividad
+					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "No baje tan rapido el brazo !! ");//
+					break;
+				case 6: // Reducir la velocidad de bajada 
+					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Bajelo despacio ");//
+					break;
+				case 7: // Fin rutina brazo x
+					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Fin Rutina ");//
+					break;
+				case 8: // Falla del ejercicio, se inicializa la activdad
+					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "No apoye la mancuerna en la cintura derecha ");//
+					break;
+				
+				}
 			}
+
 			ImGui::PopFont();
 			ImGui::End();
 		}
@@ -862,7 +987,7 @@ int NuiTrack::run()
 			//  posición
 			ImGui::SetNextWindowPos(ImVec2(5, 810), ImGuiCond_Always);
 			//  tamaño
-			ImGui::SetNextWindowSize(ImVec2(1280, 170), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2(1080, 170), ImGuiCond_Always);
 
 			ImGui::Begin("Estado", &show_status_window);   //
 
@@ -930,14 +1055,16 @@ int NuiTrack::run()
 
 				//	sobre la mano izquierda aparece un menú con las siguientes opciones
 				//ImGui::Text("MENUmano --> %d",MENUmano);
-				ImGui::RadioButton("Salto Vertical",	&MENUmano, 0);
+				ImGui::RadioButton("Elevaciones Frontales", &MENUmano, 0);
+				ImGui::RadioButton("Salto Vertical",	&MENUmano, 5);
 				ImGui::RadioButton("Salto en Largo",	&MENUmano, 1);
 				ImGui::RadioButton("Selección",			&MENUmano, 2);
 				ImGui::RadioButton("Posturas",			&MENUmano, 6);
 				ImGui::RadioButton("Flexiones",			&MENUmano, 7);
 				ImGui::RadioButton("Reset Rectords",	&MENUmano, 3);
 				ImGui::RadioButton("Ver/Quitar Ayuda",	&MENUmano, 4);
-				ImGui::RadioButton("Salir",				&MENUmano, 5);
+				ImGui::RadioButton("Salir",				&MENUmano, 8);
+				
 
 				//	las cuales se van modificando automáticamente al subir o bajar la misma
 				if ((MANOinicial.y - MANOactual.y) < -18) {
@@ -1333,7 +1460,7 @@ inline void NuiTrack::drawColor()
 // Draw Skeleton
 inline void NuiTrack::drawSkeleton()
 {
-	
+
 	//	voy a copiar user_mat en skeleton_mat, pero cambiando de tamaño para poder meter el texto
 	skeleton_mat = cv::Mat::zeros(final_height, final_width, CV_8UC3);	// es de 800 x 1280
 
@@ -1345,17 +1472,17 @@ inline void NuiTrack::drawSkeleton()
 		repeticiones    = 0;				//  repeticiones
 	}
 	*/
-	
+
 	// este bloque es el permite manejar el reloj.
 	//   quiero mostrar el período de muestreo ahora
 	if (t_INIT == true) {					//	inicio de la detección del esqueleto
 		t_INIT = false;
-		t_start			= std::clock();		//  inicio	tomo el valor de tiempo		
+		t_start = std::clock();		//  inicio	tomo el valor de tiempo		
 	}
 	else {
 		t_INIT = true;
-		t_end			= std::clock();														//	final
-		t_taken			= round(1000.0 * (double(t_end) - (double)(t_start)) / double(CLOCKS_PER_SEC));	//	tiempo por muestra en milisegundos		
+		t_end = std::clock();														//	final
+		t_taken = round(1000.0 * (double(t_end) - (double)(t_start)) / double(CLOCKS_PER_SEC));	//	tiempo por muestra en milisegundos		
 
 		if (t_taken < t_takenm) {
 			t_takenm = t_taken;
@@ -1378,7 +1505,7 @@ inline void NuiTrack::drawSkeleton()
 		return;
 	}
 
-	
+
 	// Copio el user sobre el esqueleto
 	//color_mat.copyTo(skeleton_mat);
 	//cv::resize(user_mat, user_mat, cv::Size(final_width, final_height ), 0, 0, 1);
@@ -1397,21 +1524,21 @@ inline void NuiTrack::drawSkeleton()
 			// para cada articulación
 			if (joint.confidence < 0.5) {					//  era 0.2
 				//si estoy por debajo del valor de confianza mínimo la ignoro
-				articulacion[cont]	= cv::Point(0, 0);		//  JMT, la pongo en el vértice							
+				articulacion[cont] = cv::Point(0, 0);		//  JMT, la pongo en el vértice							
 				//art_depth[cont]		= 0;
 				cont++;										//  sigo con el contador
 				continue;
 			}
 			//  obtuvo un joint correcto y lo ubica como POINT en la imagen de acuerdo al ancho de la pantalla
-			const cv::Point point	= { static_cast<int32_t>(joint.proj.x * color_width) , static_cast<int32_t>(joint.proj.y * color_height) };
-			articulacion[cont]		= point;				//	el punto en la pantalla
-			artFULL[cont]			= joint;				//	la articulación completa
+			const cv::Point point = { static_cast<int32_t>(joint.proj.x * color_width) , static_cast<int32_t>(joint.proj.y * color_height) };
+			articulacion[cont] = point;				//	el punto en la pantalla
+			artFULL[cont] = joint;				//	la articulación completa
 			//cont++;
 			//  pero voy a evitar las manos
 			switch (cont)
 			{
 				/*
-			case 3:					
+			case 3:
 				distance = depth_mat.at<uint16_t>(articulacion[3]);		//distancia de la articulación [2] en la imagen de profundidad
 				//  muestro la distancia
 				cv::putText(skeleton_mat, cv::format("d1 = %u",distance), cv::Point(Poffset + 300, 60), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);
@@ -1419,7 +1546,7 @@ inline void NuiTrack::drawSkeleton()
 				distance = joint.proj.z;				//  distancia de la articulación 2
 				//out = "d2 = " + std::to_string(distance);
 				//cv::putText(skeleton_mat, out, cv::Point(Poffset + 310, 90), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);
-				cv::putText(skeleton_mat, cv::format("d2 = %u", distance), cv::Point(Poffset + 300, 85), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);				
+				cv::putText(skeleton_mat, cv::format("d2 = %u", distance), cv::Point(Poffset + 300, 85), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);
 				cv::putText(skeleton_mat, cv::format("d3 = %u", distancia[skeleton.id]), cv::Point(Poffset + 300, 115), cv::FONT_HERSHEY_TRIPLEX, 1, _cyan, 1, cv::LINE_AA);
 				break;
 				*/
@@ -1444,7 +1571,7 @@ inline void NuiTrack::drawSkeleton()
 			case 21:
 				if (ACTIVIDADelegida == SALTO_VERTICAL) {
 					cv::circle(skeleton_mat, point, 8, _white, -2);
-				}			
+				}
 				//distance = depth_mat.at<uint16_t>(articulacion[cont]);
 				//distance = joint.proj.y;
 				//distance = artFULL[cont].real.y;
@@ -1464,60 +1591,60 @@ inline void NuiTrack::drawSkeleton()
 			//cv::putText(skeleton_mat, "Hay esqueleto!", cv::Point(20, 20), cv::FONT_HERSHEY_TRIPLEX, 1, cv::Scalar(200, 200, 50), 1, cv::LINE_AA);
 		}
 		//cv::putText(skeleton_mat, std::to_string (cont)  , cv::Point(20, 20), cv::FONT_HERSHEY_TRIPLEX, 3, cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
-		
-		
+
+
 		//  *****************  PROCESAMIENTO ABAJO
 
-		dist		= RedonD(sqrt(pow(artFULL[2].real.x - artFULL[4].real.x, 2) + pow(artFULL[2].real.y - artFULL[4].real.y, 2)));
-		escala		= (dist / RedonD(sqrt(pow(articulacion[2].x - articulacion[4].x, 2) + pow(articulacion[2].y - articulacion[4].y, 2))));
-		alturaMM	= RedonI(0.1 * altura * escala);
+		dist = RedonD(sqrt(pow(artFULL[2].real.x - artFULL[4].real.x, 2) + pow(artFULL[2].real.y - artFULL[4].real.y, 2)));
+		escala = (dist / RedonD(sqrt(pow(articulacion[2].x - articulacion[4].x, 2) + pow(articulacion[2].y - articulacion[4].y, 2))));
+		alturaMM = RedonI(0.1 * altura * escala);
 		//alturaMM_2 = RedonI(0.1*(1140 + escala * (240-userTopRight.y) / (distancia*10.0)));
 
-		envergaduraMM = RedonI(0.1*escala*envergadura);
-		userCMx_PX	= articulacion[4].x;												//
-		userCMy_PX	= articulacion[4].y;												//
+		envergaduraMM = RedonI(0.1 * escala * envergadura);
+		userCMx_PX = articulacion[4].x;												//
+		userCMy_PX = articulacion[4].y;												//
 
 		// armo el esqueleto para el SALTO VERTICAL
 		const int esqueleto_ancho = 1;
 		if (ACTIVIDADelegida == SALTO_VERTICAL) {
 
-			Hueso(skeleton_mat, articulacion, 1, 2, _red,		esqueleto_ancho);		//head-neck
-			Hueso(skeleton_mat, articulacion, 2, 3, _yellow,	esqueleto_ancho + 1);	//neck-torso
-			Hueso(skeleton_mat, articulacion, 3, 4, _red,		esqueleto_ancho);		//torso-waist
+			Hueso(skeleton_mat, articulacion, 1, 2, _red, esqueleto_ancho);		//head-neck
+			Hueso(skeleton_mat, articulacion, 2, 3, _yellow, esqueleto_ancho + 1);	//neck-torso
+			Hueso(skeleton_mat, articulacion, 3, 4, _red, esqueleto_ancho);		//torso-waist
 																						//
-			Hueso(skeleton_mat, articulacion, 5, 6, _red,		esqueleto_ancho);		//left collar-shoulder
-			Hueso(skeleton_mat, articulacion, 6, 7, _red,		esqueleto_ancho);		//left shoulder-elbow
-			Hueso(skeleton_mat, articulacion, 7, 8, _red,		esqueleto_ancho);		//left elbow-wrist
-			Hueso(skeleton_mat, articulacion, 8, 9, _red,		esqueleto_ancho);		//left wrist-hand
+			Hueso(skeleton_mat, articulacion, 5, 6, _red, esqueleto_ancho);		//left collar-shoulder
+			Hueso(skeleton_mat, articulacion, 6, 7, _red, esqueleto_ancho);		//left shoulder-elbow
+			Hueso(skeleton_mat, articulacion, 7, 8, _red, esqueleto_ancho);		//left elbow-wrist
+			Hueso(skeleton_mat, articulacion, 8, 9, _red, esqueleto_ancho);		//left wrist-hand
 																						//
-			Hueso(skeleton_mat, articulacion, 11, 12, _red,		esqueleto_ancho);		//right collar-shoulder
-			Hueso(skeleton_mat, articulacion, 12, 13, _red,		esqueleto_ancho);		//right shoulder-elbow 
-			Hueso(skeleton_mat, articulacion, 13, 14, _red,		esqueleto_ancho);		//right shoulder-elbow 
-			Hueso(skeleton_mat, articulacion, 14, 15, _red,		esqueleto_ancho);		//right wrist-hand
+			Hueso(skeleton_mat, articulacion, 11, 12, _red, esqueleto_ancho);		//right collar-shoulder
+			Hueso(skeleton_mat, articulacion, 12, 13, _red, esqueleto_ancho);		//right shoulder-elbow 
+			Hueso(skeleton_mat, articulacion, 13, 14, _red, esqueleto_ancho);		//right shoulder-elbow 
+			Hueso(skeleton_mat, articulacion, 14, 15, _red, esqueleto_ancho);		//right wrist-hand
 																						//
-			Hueso(skeleton_mat, articulacion,  4, 21, _red,		esqueleto_ancho);		//right waist-hip
-			Hueso(skeleton_mat, articulacion, 21, 22, _red,		esqueleto_ancho);		//right hip-knee
-			Hueso(skeleton_mat, articulacion, 22, 23, _red,		esqueleto_ancho);		//right knee-ancle
+			Hueso(skeleton_mat, articulacion, 4, 21, _red, esqueleto_ancho);		//right waist-hip
+			Hueso(skeleton_mat, articulacion, 21, 22, _red, esqueleto_ancho);		//right hip-knee
+			Hueso(skeleton_mat, articulacion, 22, 23, _red, esqueleto_ancho);		//right knee-ancle
 																						//
-			Hueso(skeleton_mat, articulacion,  4, 17, _red,		esqueleto_ancho);		//left waist-hip
-			Hueso(skeleton_mat, articulacion, 17, 18, _red,		esqueleto_ancho);		//left hip-knee
-			Hueso(skeleton_mat, articulacion, 18, 19, _red,		esqueleto_ancho);		//left knee-ancle	
+			Hueso(skeleton_mat, articulacion, 4, 17, _red, esqueleto_ancho);		//left waist-hip
+			Hueso(skeleton_mat, articulacion, 17, 18, _red, esqueleto_ancho);		//left hip-knee
+			Hueso(skeleton_mat, articulacion, 18, 19, _red, esqueleto_ancho);		//left knee-ancle	
 
-			Hueso(skeleton_mat, articulacion, 23, 24, _red,		esqueleto_ancho + 2);	//right knee-ancle
-			Hueso(skeleton_mat, articulacion, 19, 20, _red,		esqueleto_ancho + 2);	//left knee-ancle	
+			Hueso(skeleton_mat, articulacion, 23, 24, _red, esqueleto_ancho + 2);	//right knee-ancle
+			Hueso(skeleton_mat, articulacion, 19, 20, _red, esqueleto_ancho + 2);	//left knee-ancle	
 
 			//  algunos arcos internos
-			ang_l_codo = Arco(skeleton_mat, 6, 7, 8, _black, -1);		// codo izquierdo del usuario de fremte a la cámara		
+			ang_l_codo = Arco(skeleton_mat, 6, 7, 8, _black, -1);		// codo izquierdo del usuario de frente a la cámara		
 			ang_r_codo = Arco(skeleton_mat, 12, 13, 14, _yellow, -1);		// codo derecho
 			//ang_l_hombro	= Arco(skeleton_mat,  05, 06, 07, _yellow, -1);		// hombro izq
 			//ang_r_hombro	= Arco(skeleton_mat,  11, 12, 13, _yellow, -1);		// hombro derecho
 
 		}
-		
+
 
 		//	JUEGUITO CON LOS CÍRCULOS
 		//	si la muñeca derecha lo toca... cambia de color y si la mantiene 2 segundos y la otra mano está por encima, lo puede mover		
-		if (ACTIVIDADelegida == JUEGOS) {	
+		if (ACTIVIDADelegida == JUEGOS) {
 			//	inicialmente CICULOcont es -1, acá toma el valor inicial
 			if (CIRCULOcont < 0) {																			//	después de un tiempo que estoy arriba
 				// entonces tomo del torso a la derecha y abajo
@@ -1530,7 +1657,7 @@ inline void NuiTrack::drawSkeleton()
 			//	PARA MANO IZQUIERDA
 			if ((abs(articulacion[9].x - centro.x) < 25) && (abs(articulacion[9].y - centro.y) < 25)) {		//	si me acerco con la mano izq...
 				cv::circle(skeleton_mat, centro, 8, _yellow, -2);											//	el verde cambia a amarillo
-				CIRCULOcont++;			
+				CIRCULOcont++;
 				if (CIRCULOcont > 45) {																		//	después de un tiempo que estoy arriba
 					VENTANAinteractiva = true;
 					/*
@@ -1538,7 +1665,7 @@ inline void NuiTrack::drawSkeleton()
 						centro = cv::Point(articulacion[9].x, articulacion[9].y);							//	me lo llevo a la mano a otro lado
 						cv::circle(skeleton_mat, centro, 8, _fucsia, -2);									//	círculo fucsia
 						//VENTANAinteractiva = true;
-					}	
+					}
 					*/
 				}
 			}
@@ -1564,20 +1691,20 @@ inline void NuiTrack::drawSkeleton()
 
 					switch (MENUmano) {
 					case 0:		//			vertical
-						ACTIVIDADelegida	= SALTO_VERTICAL;						
-						VENTANAinteractiva	= false;
+						ACTIVIDADelegida = SALTO_VERTICAL;
+						VENTANAinteractiva = false;
 						break;
 					case 1:		//			largo
-						ACTIVIDADelegida	= SALTO_VERTICAL;						
-						VENTANAinteractiva	= false;
+						ACTIVIDADelegida = SALTO_VERTICAL;
+						VENTANAinteractiva = false;
 						break;
 					case 2:		//			seguir jugando
-						ACTIVIDADelegida	= JUEGOS;						
-						VENTANAinteractiva	= false;
+						ACTIVIDADelegida = JUEGOS;
+						VENTANAinteractiva = false;
 						break;
 					case 3:		//			reset records
 						limpiar_records();
-						VENTANAinteractiva	= false;
+						VENTANAinteractiva = false;
 						break;
 					case 4:		//			ayuda
 						if (AYUDA_activado) {
@@ -1592,12 +1719,12 @@ inline void NuiTrack::drawSkeleton()
 						VENTANAinteractiva = false;
 						break;
 					}
-					
+
 					/*
 					if (articulacion[9].y < articulacion[15].y) {
 						//centro2 = cv::Point(articulacion[15].x, articulacion[15].y);						//	me lo llevo a la mano a otro lado
 						cv::circle(skeleton_mat, centro2, 8, _fucsia, -2);									//	círculo fucsia
-											
+
 						//
 						//	con esta opción voy a cambiar el selector validado.
 						//SALTOstatus = 1;
@@ -1665,7 +1792,7 @@ inline void NuiTrack::drawSkeleton()
 			}
 		}
 
-		
+
 		// algunos cambios dependiendo de los ángulos
 		// 1) si los codos son cero hago como un hueso más grande desde la muñeca al hombro
 		//if (abs(ang_l_codo - 90.0) < 45.00) {
@@ -1674,20 +1801,20 @@ inline void NuiTrack::drawSkeleton()
 			//distance	= depth_mat.at<uint16_t>(articulacion[7]);
 			//cv::putText(skeleton_mat, std::to_string(distance), (articulacion[7]+cv::Point(60, 60)), cv::FONT_HERSHEY_TRIPLEX, 0.6, _black, 1, cv::LINE_AA);			
 		//}
-		
+
 		/*
 		if (abs(articulacion[12].y - articulacion[14].y) < 4.00) {
 			Hueso(skeleton_mat, articulacion, 12, 14, _white, 7);	//	hago com un hueso más grande en blanco
 			// aprovecho y reseteo el maximo del salto
 			SALTOrecord  = 0;
 			SALTOmax     = 3000;
-			repeticiones = 0;			
+			repeticiones = 0;
 			//	enciendo el cronómetro
 			if (CONTANDO == false) {
 				CONTANDO	= true;		//	contando a true
 				t_cur		= clock();	//	y reseteo
 			}
-			
+
 		}
 		*/
 
@@ -1709,7 +1836,7 @@ inline void NuiTrack::drawSkeleton()
 		}*/
 
 		//cv::putText(skeleton_mat, std::to_string(skeleton_mat.type()), cv::Point(200, 200), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _red, 1, cv::LINE_AA);
-		
+
 		//cv::ellipse(skeleton_mat, articulacion[7], cv::Size(30, 30), ANGrot, ANGi, ANGf, _yellow, 2, 8);
 		//cv::line(skeleton_mat, articulacion[3], articulacion[4], cv::Scalar(0, 0, 255), 3);
 
@@ -1718,15 +1845,578 @@ inline void NuiTrack::drawSkeleton()
 		//Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 3);	//	línea de hombros
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[06].real.z)), cv::Point(articulacion[06].x - 20, articulacion[06].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[12].real.z)), cv::Point(articulacion[12].x + 20, articulacion[12].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
-	
+
 		//Hueso(skeleton_mat, articulacion, 17, 21, _red, esqueleto_ancho + 3);	//	línea de caderas
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[17].real.z)), cv::Point(articulacion[17].x - 20, articulacion[17].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[21].real.z)), cv::Point(articulacion[21].x + 20, articulacion[21].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
-	
+
 		//Hueso(skeleton_mat, articulacion, 19, 23, _red, esqueleto_ancho + 3);	//	línea de pies
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[19].real.z)), cv::Point(articulacion[19].x - 20, articulacion[19].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 		//cv::putText(skeleton_mat, cv::format("%4.0f", RedonD(artFULL[23].real.z)), cv::Point(articulacion[23].x + 20, articulacion[23].y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.5, _white, 1, cv::LINE_AA);
 
+
+
+		if (ACTIVIDADelegida == Elevaciones_Frontales) {
+			int esqueleto_ancho = 1;
+			Hueso(skeleton_mat, articulacion, 1, 2, _red, esqueleto_ancho);		//head-neck
+			Hueso(skeleton_mat, articulacion, 2, 3, _yellow, esqueleto_ancho + 1);	//neck-torso
+			Hueso(skeleton_mat, articulacion, 3, 4, _red, esqueleto_ancho);		//torso-waist
+																						//
+			Hueso(skeleton_mat, articulacion, 5, 6, _red, esqueleto_ancho);		//left collar-shoulder
+			Hueso(skeleton_mat, articulacion, 6, 7, _red, esqueleto_ancho);		//left shoulder-elbow
+			Hueso(skeleton_mat, articulacion, 7, 8, _red, esqueleto_ancho);		//left elbow-wrist
+			Hueso(skeleton_mat, articulacion, 8, 9, _red, esqueleto_ancho);		//left wrist-hand
+																						//
+			Hueso(skeleton_mat, articulacion, 11, 12, _red, esqueleto_ancho);		//right collar-shoulder
+			Hueso(skeleton_mat, articulacion, 12, 13, _red, esqueleto_ancho);		//right shoulder-elbow 
+			Hueso(skeleton_mat, articulacion, 13, 14, _red, esqueleto_ancho);		//right shoulder-elbow 
+			Hueso(skeleton_mat, articulacion, 14, 15, _red, esqueleto_ancho);		//right wrist-hand
+																						//
+			Hueso(skeleton_mat, articulacion, 4, 21, _red, esqueleto_ancho);		//right waist-hip
+			Hueso(skeleton_mat, articulacion, 21, 22, _red, esqueleto_ancho);		//right hip-knee
+			Hueso(skeleton_mat, articulacion, 22, 23, _red, esqueleto_ancho);		//right knee-ancle
+																						//
+			Hueso(skeleton_mat, articulacion, 4, 17, _red, esqueleto_ancho);		//left waist-hip
+			Hueso(skeleton_mat, articulacion, 17, 18, _red, esqueleto_ancho);		//left hip-knee
+			Hueso(skeleton_mat, articulacion, 18, 19, _red, esqueleto_ancho);		//left knee-ancle	
+
+			Hueso(skeleton_mat, articulacion, 23, 24, _red, esqueleto_ancho + 2);	//right knee-ancle
+			Hueso(skeleton_mat, articulacion, 19, 20, _red, esqueleto_ancho + 2);	//left knee-ancle
+
+			//ang_r_codo = Arco(skeleton_mat, 12, 13, 14, _green, -1);		// codo derecho
+
+			switch (Band_Estados) {
+			case 0:
+				// Estado 0: Presentación de la Rutina
+
+					// Dibujamos el Esqueleto
+				Hueso(skeleton_mat, articulacion, 1, 2, _red, esqueleto_ancho);		//head-neck
+				Hueso(skeleton_mat, articulacion, 2, 3, _yellow, esqueleto_ancho + 1);	//neck-torso
+				Hueso(skeleton_mat, articulacion, 3, 4, _red, esqueleto_ancho);		//torso-waist
+																							//
+				Hueso(skeleton_mat, articulacion, 5, 6, _red, esqueleto_ancho);		//left collar-shoulder
+				Hueso(skeleton_mat, articulacion, 6, 7, _red, esqueleto_ancho);		//left shoulder-elbow
+				Hueso(skeleton_mat, articulacion, 7, 8, _red, esqueleto_ancho);		//left elbow-wrist
+				Hueso(skeleton_mat, articulacion, 8, 9, _red, esqueleto_ancho);		//left wrist-hand
+																							//
+				Hueso(skeleton_mat, articulacion, 11, 12, _red, esqueleto_ancho);		//right collar-shoulder
+				Hueso(skeleton_mat, articulacion, 12, 13, _red, esqueleto_ancho);		//right shoulder-elbow 
+				Hueso(skeleton_mat, articulacion, 13, 14, _red, esqueleto_ancho);		//right shoulder-elbow 
+				Hueso(skeleton_mat, articulacion, 14, 15, _red, esqueleto_ancho);		//right wrist-hand
+																							//
+				Hueso(skeleton_mat, articulacion, 4, 21, _red, esqueleto_ancho);		//right waist-hip
+				Hueso(skeleton_mat, articulacion, 21, 22, _red, esqueleto_ancho);		//right hip-knee
+				Hueso(skeleton_mat, articulacion, 22, 23, _red, esqueleto_ancho);		//right knee-ancle
+																							//
+				Hueso(skeleton_mat, articulacion, 4, 17, _red, esqueleto_ancho);		//left waist-hip
+				Hueso(skeleton_mat, articulacion, 17, 18, _red, esqueleto_ancho);		//left hip-knee
+				Hueso(skeleton_mat, articulacion, 18, 19, _red, esqueleto_ancho);		//left knee-ancle	
+
+				Hueso(skeleton_mat, articulacion, 23, 24, _red, esqueleto_ancho + 2);	//right knee-ancle
+				Hueso(skeleton_mat, articulacion, 19, 20, _red, esqueleto_ancho + 2);	//left knee-ancle
+
+				contador_estado_0++;
+				if (contador_estado_0 > estado_estable_0)
+					contador_estado_0b++;
+				//contador_estado_0 = 0;
+
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				if (contador_estado_0b > estado_estable_0b) {
+					Band_Estados = 1;
+					contador_estado_0b = 0;
+				}
+				break;
+
+
+
+			case 1:
+				// Estado 1: Estado en el cual se confirma la postura correcta de hombros y caderas rectas  del user. 
+
+				Hueso(skeleton_mat, articulacion, 1, 2, _red, esqueleto_ancho);		//head-neck
+				Hueso(skeleton_mat, articulacion, 2, 3, _yellow, esqueleto_ancho + 1);	//neck-torso
+				Hueso(skeleton_mat, articulacion, 3, 4, _red, esqueleto_ancho);		//torso-waist
+																							//
+				Hueso(skeleton_mat, articulacion, 5, 6, _red, esqueleto_ancho);		//left collar-shoulder
+				Hueso(skeleton_mat, articulacion, 6, 7, _red, esqueleto_ancho);		//left shoulder-elbow
+				Hueso(skeleton_mat, articulacion, 7, 8, _red, esqueleto_ancho);		//left elbow-wrist
+				Hueso(skeleton_mat, articulacion, 8, 9, _red, esqueleto_ancho);		//left wrist-hand
+																							//
+				Hueso(skeleton_mat, articulacion, 11, 12, _red, esqueleto_ancho);		//right collar-shoulder
+				Hueso(skeleton_mat, articulacion, 12, 13, _red, esqueleto_ancho);		//right shoulder-elbow 
+				Hueso(skeleton_mat, articulacion, 13, 14, _red, esqueleto_ancho);		//right shoulder-elbow 
+				Hueso(skeleton_mat, articulacion, 14, 15, _red, esqueleto_ancho);		//right wrist-hand
+																							//
+				Hueso(skeleton_mat, articulacion, 4, 21, _red, esqueleto_ancho);		//right waist-hip
+				Hueso(skeleton_mat, articulacion, 21, 22, _red, esqueleto_ancho);		//right hip-knee
+				Hueso(skeleton_mat, articulacion, 22, 23, _red, esqueleto_ancho);		//right knee-ancle
+																							//
+				Hueso(skeleton_mat, articulacion, 4, 17, _red, esqueleto_ancho);		//left waist-hip
+				Hueso(skeleton_mat, articulacion, 17, 18, _red, esqueleto_ancho);		//left hip-knee
+				Hueso(skeleton_mat, articulacion, 18, 19, _red, esqueleto_ancho);		//left knee-ancle	
+
+				Hueso(skeleton_mat, articulacion, 23, 24, _red, esqueleto_ancho + 2);	//right knee-ancle
+				Hueso(skeleton_mat, articulacion, 19, 20, _red, esqueleto_ancho + 2);	//left knee-ancle
+
+				// Guardamos posiciones de articulaciones
+				DifCaderasCM = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[17].real.z));
+				Difhombros = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+
+				// Partes del esqueleto
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				// Preguntamos por esas posturas
+				if ((DifCaderasCM < UmbralCaderasE1) && (Difhombros < UmbralHombrosE1))
+				{
+					// Si estan rectas las marco en negro y espero el paso de estado
+
+					contador_estado_1++;
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5); // Hombros en posición correcta
+					Hueso(skeleton_mat, articulacion, 21, 17, _black, esqueleto_ancho + 5);//Caderas rectas
+
+					// Hago un pequeño retardo
+
+					if (contador_estado_1 > estado_estable_1) {
+						contador_estado_1 = 0;
+						Band_Estados = 2;
+						break;
+					}
+
+				}
+				else
+
+					if ((DifCaderasCM > UmbralCaderasE1) && (Difhombros > UmbralHombrosE2)) {
+						Hueso(skeleton_mat, articulacion, 17, 21, _red, esqueleto_ancho + 5);
+						Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 5);
+						Band_Estados = 1;
+						// Si estan torcidas debo quedarme en este estado hasta alcanzar la postura correcta
+					}
+				break;
+				//}//Fin caso 1
+			//}//Fin Switch
+
+
+			case 2:
+				// Estado 2: El user cominenza levantando la mancuerna con su brazo hasta llevarlo a la altura del mentón.
+				// Acá en este estado se debe controlar que no se encorve los hombros al levantar la mancuerna
+
+				// Posturas de caderas y hombros 
+				DifCaderasCM = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[17].real.z));
+				Difhombros = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+
+				//DifCaderasCMaux = 2 * DifCaderasCM;
+				//DifHombrosCMaux = 2 * Difhombros;
+
+				//DifCaderasCMaux = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[17].real.z));
+
+
+				// Posición del cuello derecho en el eje y
+				Cuello_base = artFULL[11].real.y;
+				Cuello_Derecho = RedonI(Cuello_base + Umbral_Derecho);
+
+				// Posición del cuello izquierdo en el eje y
+				cuello_base_izq = artFULL[6].real.y;
+				cuello_base_izq = RedonI(cuello_base_izq + Umbral_Derecho);
+
+				// Partes del esqueleto
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				// Preguntamos si se cumple la condición del estado 1 y si la muñeca de cualquier
+				// brazo todavia no llega al mentón
+
+				if (artFULL[14].real.y < (Cuello_Derecho)) // pregunto por la articulación de la muñeca derecha
+				{
+					Band_Estados = 2;
+					//break;
+
+				}
+				else {
+					Band_Estados = 3;
+					break;
+				}
+
+				// Acá pregunto por la muñeca izquierda
+				//if ((artFULL[8].real.y < (cuello_base_izq))) // pregunto por la articulación de la muñeca izquierda
+				//{
+				//	Band_Estados = 2;
+
+				//}
+				//else {
+					//Band_Estados = 3;
+					//break;
+				//}
+
+
+
+				if ((DifCaderasCM < UmbralCaderasE2) && (Difhombros < UmbralHombrosE2)) {
+
+					Hueso(skeleton_mat, articulacion, 17, 21, _black, esqueleto_ancho + 5);	//línea de caderas
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 5);	//	línea de hombros
+					Band_Estados = 2;
+				}
+
+				//Analísis para la transición al ESTADO 4 FUNCIONANDO
+
+				if ((Difhombros > (2 * UmbralHombrosE2AUX))) {
+
+					Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 3);	//línea de hombros roja
+					Band_Estados = 4;
+					break;
+				}
+				else {
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 3);	//línea de hombros negra
+					Band_Estados = 2;
+					break;
+				}
+				// FIN transición al ESTADO 4
+				 // Tenemos TRANSICION FORZOZA AL ESTADO 4
+
+				// Esta sentencia me fuerza a ir al estado 1B, sin poder levantar la mano, verificar umbral 
+				//En principio no vamos a corregir que el user doble su cuerpo mientras levanta el brazo derecho
+				// REVISAR LA TRANSICION AL ESTADO 4
+			//break;
+
+		//}//Fin caso 2
+	//}//Fin Switch
+
+
+			case 3:
+				// Estado 3, aca el usuario debe mantener el brazo recto por 2 segundos de lo contrario no es válida la rutina y debo
+				// volver al ESTADO 2
+
+				//  Partes del Esqueleto
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				//Posición de caderas y hombros en el plano z
+				//DifCaderasCM = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[17].real.z));
+				//Difhombros = RedonI(0.1 * abs(artFULL[12].real.z - artFULL[06].real.z));
+
+				//Posición de cuello derecho en el eje y
+				Cuello_base = artFULL[11].real.y;
+				Cuello_Derecho = RedonI(Cuello_base + Umbral_Derecho);
+
+				// Posición del cuello izquierdo
+				cuello_base_izq = artFULL[5].real.y;
+				cuello_izquierdo = RedonI(cuello_base_izq + Umbral_Derecho);
+
+
+				//dif_cadera_puño = RedonI(0.1 * abs(artFULL[21].real.y - artFULL[14].real.y));
+
+
+			// Aca debo preguntar si el puño esta a la altura del mentón del user, si es así debo manternerlo 2 segundos, sino cumple debo 
+			// ir al estado 5 de la carta
+
+
+				if (artFULL[14].real.y >= (Cuello_Derecho))
+					// Acá detecta el puño derecho
+				{
+					contador_estado_3++;
+					//Band_auxiliar_E3 == 1;
+					Band_Estados = 3;
+					
+					//break;
+				}
+				else
+					Band_Estados = 2;
+				//else {
+					if ((contador_estado_3 < estado_estable_3) && (artFULL[14].real.y <= (Cuello_Derecho - UmbralCuello))) // && (Band_auxiliar_E3 == 1))
+					{
+						contador_estado_3 = 0;
+						Band_Estados = 5;// Me voy al ESTADO donde anuncia que no debe bajar tan rápido el brazo
+						Band_auxiliar_E3 = 0;
+						break;
+					}
+				//}
+						if ((contador_estado_3 > estado_estable_3))
+						{
+							contador_estado_3 = 0;
+							Band_Estados = 6;
+							break;
+						}
+						//else
+							//Band_Estados = 3;
+						break;
+				
+			    
+					
+					//Band_auxiliar_E3 = 1;
+					//Band_aux_E3B = 1;
+					//break;
+				
+				//else {
+					//Band_Estados = 2;
+					//contador_estado_2 = 0;
+					//break;
+				//}
+
+				/*
+				   // Aca debo preguntar si el USER levanto el brazo izquierdo
+				   if (artFULL[8].real.y >= (cuello_izquierdo)) //
+					   // Acá detecta el puño izquierdo
+				   {
+					   contador_estado_3++;
+					   Band_Estados = 3;
+					   Band_auxiliar_E3IZQ = 1;
+				   }
+				   else {
+					   Band_Estados = 2;
+					   //break;
+				   }
+				   */ //Brazo Izquierdo
+
+				   // Transicion al ESTADO 5 con el brazo derecho
+				//if ((contador_estado_3 < estado_estable_3) && (artFULL[14].real.y <= (Cuello_Derecho - UmbralCuello)) && (Band_auxiliar_E3 == 1))
+				//{
+					//contador_estado_3 = 0;
+					//Band_Estados = 5;// Me voy al ESTADO donde anuncia que no debe bajar tan rápido el brazo
+					//Band_auxiliar_E3 = 0;
+					//break;
+				//}
+				//}
+
+				/*
+				// Pregunto si bajo rápido el brazo izquierdo y me voy al ESTADO 5
+				if (((contador_estado_3 < estado_estable_3) && (artFULL[8].real.y <= (cuello_izquierdo - UmbralCuello)) && (Band_auxiliar_E3IZQ == 1)))
+				{
+					contador_estado_3 = 0;
+					Band_Estados = 5;// Me voy al ESTADO donde anuncia que no debe bajar tan rápido el brazo
+					Band_auxiliar_E3IZQ = 0;
+					break;
+				}
+				*/ // Brazo Izquierdo
+
+				//En esta sentencia lo que se identifica es si el user se adelanto a la rutina
+				//Band_Estados = 5;// En este Estado, que es el estado 4 de la carta
+				//break;           //Se identifica que el user bajo el brazo muy rápido por lo cual no es válido el ejercicio
+				//contador_estado_3 = 0;
+			//}// Fin case 3
+		//}// Fin SWITCH
+
+			
+		// FALTA AGREGAR LOS ESTADOS 6, 7 y 8.
+			 
+			case 4:
+				// En este estado se le vuelve a insistir a la persona que mantenga hombros y caderas rectas, este es un estado transitorio
+				// solamente presenta un delay
+
+				//  Partes del Esqueleto
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				contador_estado_4++;
+				if (contador_estado_4 > estado_estable_4) {
+					contador_estado_4 = 0;
+					Band_Estados = 2;
+					break;
+				}
+
+				break;
+		
+			case 5:
+				// En Estado solo se le indicará al user que no baje tan rápido el brazo porque pueden producirse tirones
+
+				//  Partes del Esqueleto
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				//Retardo del estado 5
+				contador_estado_5++;
+				if (contador_estado_5 > estado_estable_5) {
+					contador_estado_5 = 0;
+					Band_Estados = 2;
+					break;
+				}
+
+				break;
+				//}// Fin caso 5
+			//}//  fin SWITCH
+            
+		           
+				// REVISAR LAS SENTENCIAS DEL IF, HAY AMBIGUEDAD
+			case 6:
+				// En este estado que corresponde al E4 de la carta, el user debe bajar despacio el brazo
+
+				//  Partes del Esqueleto
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				// Tomamos las posiciones en el eje Z de la muñeca derecha y la cintura derecha, para saber si finalizo la rutina
+
+				cadera_derecha = artFULL[21].real.y;
+				muñeca_derecha = artFULL[14].real.y;
+
+				// Posición de la cadera izquierda
+
+				//cadera_izquierda = artFULL[17].real.y;
+				//muñeca_izquierda = artFULL[8].real.y;
+
+
+				//En estas sentencias se detecta cuando el user apoya la mancuerna en la cadera derecha o en la izquierda /
+				contador_estado_6++;
+				//dif_cadera_puño = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[14].real.z));
+
+				// En estas sentencias lo que se busca es que el user no apoye la mancuerna en la cadera derecha cuando paso el tiempo de bajada/
+
+				        ////////////// BRAZO DERECHO///////////////
+				if (contador_estado_6 > estado_estable_6) {
+					contador_estado_6 = 0;
+					Band_Estados = 7;
+					break;
+				}
+				else 
+					Band_Estados = 6;
+				
+
+				if (((artFULL[14].real.y <= (cadera_derecha + Umbral_E8_cadera_derecha)) && (contador_estado_6 < estado_estable_6))) // 
+				{
+					contador_estado_6 = 0;
+					Band_Estados = 8;
+					break;
+				}
+				else
+					Band_Estados = 6;
+				
+
+				
+
+					//////////////////////////// BRAZO IZQUIERDO
+				//else {
+					//if (((((artFULL[8].real.y <= (cadera_izquierda + Umbral_E8_cadera_derecha))) && (contador_estado_6 < estado_estable_6))) && ((Band_auxiliar_E3 == 1)))
+					//{
+						//contador_estado_6 = 0;
+						//Band_Estados = 8;
+						//Band_auxiliar_E3 == 0;
+						//break;
+					//}
+					/////////////////////////////      
+				//}
+				
+				break;
+				//}// FIN caso 6
+			//}// FIN SWITCH
+			                 
+                      
+				
+			case 7:
+
+				// En este estado indicamos que la rutina  termino correctamente, hacemos un delay y pasamos de estado
+
+				// Partes del esqueleto
+
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				contador_estado_7++;
+
+				if (contador_estado_7 > estado_estable_7) {
+					contador_estado_7 = 0;
+					Band_Estados = 7;
+					break;
+				}
+
+				break; 
+			//}//Fin case 7
+		//}// Fin SWITCH
+		               
+	         
+              
+			  case 8:
+
+				// En este estado le indicamos al usuario que no debe apoyar la mancuerna en la cadera derecha o izquierda, luego de eso volvemos al incio
+				// de la rutina con el brazo correspondiente, es decir, no es válido el ejercicio
+
+				// Partes del esqueleto
+
+				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
+				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
+				Hueso(skeleton_mat, articulacion, 3, 4, _fluo, esqueleto_ancho + 3);//Torso y cintura
+				Hueso(skeleton_mat, articulacion, 1, 2, _fluo, esqueleto_ancho + 3);//Cabeza y cuello
+				Hueso(skeleton_mat, articulacion, 13, 14, _fluo, esqueleto_ancho + 3);//Muñeca y codo derecho
+				Hueso(skeleton_mat, articulacion, 6, 7, _fluo, esqueleto_ancho + 3);//Hombro y codo izquierdo
+				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
+				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
+
+				contador_estado_8++;
+
+				if (contador_estado_8 > estado_estable_8) {
+					contador_estado_8 = 0;
+					Band_Estados = 1;// Estado donde se le pide que levante un brazo
+					break;
+				}
+				else
+					Band_Estados = 8;
+			}//Fin case 8
+				
+		} //Fin SWITCH
+				
+			
+			
+		           
+			
+			
+		
+					
+		
+	
+
+		
+	
+
+				
+			
+			
 		//	algunas variables internas del salto
 		int		DIFhombrosCM	=  00;	//	diferencia entre los hombros 6 y 12 en z en CM
 		int		DIFcaderasCM	=  00;	//	diferencia entre los caderas 17 y 21 en z en CM
@@ -1795,7 +2485,7 @@ inline void NuiTrack::drawSkeleton()
 					}
 					else 
 					{
-						//						pero si no estamos bien orientados, los huevos de hombro y cadera se ven rojos...
+						//						pero si no estamos bien orientados, los huesos del hombro y cadera se ven rojos...
 						//
 						if (DIFhombrosCM < DIFumbralCM) {		//	hombros torcidos derecha/izquierda? 
 							Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3);		//	línea de hombros correcta, fluo
