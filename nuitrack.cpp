@@ -163,16 +163,18 @@ int cadera_izquierda = 0;
 int muñeca_izquierda = 0;
 int UmbralHombrosE1 = 05;
 int UmbralCaderasE1 = 05;
-int UmbralHombrosE2 = 05;
+int UmbralHombrosE2 = 06;
 int UmbralCaderasE2 = 1;
-int UmbralHombrosE2AUX = 07;
+int UmbralHombrosE2AUX = 05;
 int Band_auxiliar_E3 = 0;
+int Band_auxiliar_E3IZQ = 0;
+int Band_aux_E3B = 0;
 int UmbralCuello = 02;
 int estado_estable_0 = 70;
 int contador_estado_0 = 0;
 int contador_estado_0b = 0;
 int estado_estable_0b = 100;
-int Umbral_E8_cadera_derecha = 03;
+int Umbral_E8_cadera_derecha = 01;
 int cont_aux = 0;
 int estable_aux = 50;
 int cont_est3 = 0;
@@ -188,10 +190,10 @@ int contador_estado_7 = 0;
 int contador_estado_8 = 0;
 int estado_estable_1 = 70;
 int estado_estable_2 = 30;
-int estado_estable_3 = 60;
+int estado_estable_3 = 80;
 int estado_estable_4 = 50;
 int estado_estable_5 = 100;
-int estado_estable_6 = 300;
+int estado_estable_6 = 180;
 int estado_estable_7 = 30;
 int estado_estable_8 = 40;
 
@@ -963,15 +965,13 @@ int NuiTrack::run()
 				case 6: // Reducir la velocidad de bajada 
 					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Bajelo despacio ");//
 					break;
-				case 7: // Comenzar con el brazo izquierdo
+				case 7: // Fin rutina brazo x
 					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Fin Rutina ");//
 					break;
 				case 8: // Falla del ejercicio, se inicializa la activdad
 					ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "No apoye la mancuerna en la cintura derecha ");//
 					break;
-				//case 9: // Aca empieza el ejercicio con el brazo izquierdo
-					//ImGui::TextColored(ImVec4(1.0f, 0.12f, 0.04f, 1.0f), "Levante el brazo izquierdo ");//
-					//break;
+				
 				}
 			}
 
@@ -2006,7 +2006,8 @@ inline void NuiTrack::drawSkeleton()
 						// Si estan torcidas debo quedarme en este estado hasta alcanzar la postura correcta
 					}
 				break;
-
+				//}//Fin caso 1
+			//}//Fin Switch
 
 
 			case 2:
@@ -2020,7 +2021,7 @@ inline void NuiTrack::drawSkeleton()
 				//DifCaderasCMaux = 2 * DifCaderasCM;
 				//DifHombrosCMaux = 2 * Difhombros;
 
-				DifCaderasCMaux = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[17].real.z));
+				//DifCaderasCMaux = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[17].real.z));
 
 
 				// Posición del cuello derecho en el eje y
@@ -2028,9 +2029,9 @@ inline void NuiTrack::drawSkeleton()
 				Cuello_Derecho = RedonI(Cuello_base + Umbral_Derecho);
 
 				// Posición del cuello izquierdo en el eje y
-				cuello_base_izq = artFULL[5].real.y;
+				cuello_base_izq = artFULL[6].real.y;
 				cuello_base_izq = RedonI(cuello_base_izq + Umbral_Derecho);
-				 
+
 				// Partes del esqueleto
 				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
 				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
@@ -2044,15 +2045,29 @@ inline void NuiTrack::drawSkeleton()
 				// Preguntamos si se cumple la condición del estado 1 y si la muñeca de cualquier
 				// brazo todavia no llega al mentón
 
-				if (artFULL[14].real.y < (Cuello_Derecho)) // || (artFULL[8].real.y < (Cuello_Derecho)))
+				if (artFULL[14].real.y < (Cuello_Derecho)) // pregunto por la articulación de la muñeca derecha
 				{
 					Band_Estados = 2;
+					//break;
 
 				}
 				else {
 					Band_Estados = 3;
 					break;
 				}
+
+				// Acá pregunto por la muñeca izquierda
+				//if ((artFULL[8].real.y < (cuello_base_izq))) // pregunto por la articulación de la muñeca izquierda
+				//{
+				//	Band_Estados = 2;
+
+				//}
+				//else {
+					//Band_Estados = 3;
+					//break;
+				//}
+
+
 
 				if ((DifCaderasCM < UmbralCaderasE2) && (Difhombros < UmbralHombrosE2)) {
 
@@ -2061,25 +2076,30 @@ inline void NuiTrack::drawSkeleton()
 					Band_Estados = 2;
 				}
 
-				//Analísis para la transición al ESTADO 4
+				//Analísis para la transición al ESTADO 4 FUNCIONANDO
 
-				if ((Difhombros > (UmbralHombrosE2AUX))) {
+				if ((Difhombros > (2 * UmbralHombrosE2AUX))) {
 
-					//Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 3);	//línea de hombros correcta, negra
-					//Band_Estados = 2;
-					//break;
-				//}
-				//else {
-					Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 3);	//línea de hombros incorrecta
+					Hueso(skeleton_mat, articulacion, 6, 12, _red, esqueleto_ancho + 3);	//línea de hombros roja
 					Band_Estados = 4;
 					break;
 				}
+				else {
+					Hueso(skeleton_mat, articulacion, 6, 12, _black, esqueleto_ancho + 3);	//línea de hombros negra
+					Band_Estados = 2;
+					break;
+				}
 				// FIN transición al ESTADO 4
+				 // Tenemos TRANSICION FORZOZA AL ESTADO 4
 
-					// Esta sentencia me fuerza a ir al estado 1B, sin poder levantar la mano, verificar umbral 
-					//En principio no vamos a corregir que el user doble su cuerpo mientras levanta el brazo derecho
-					// REVISAR LA TRANSICION AL ESTADO 4
-				//break;
+				// Esta sentencia me fuerza a ir al estado 1B, sin poder levantar la mano, verificar umbral 
+				//En principio no vamos a corregir que el user doble su cuerpo mientras levanta el brazo derecho
+				// REVISAR LA TRANSICION AL ESTADO 4
+			//break;
+
+		//}//Fin caso 2
+	//}//Fin Switch
+
 
 			case 3:
 				// Estado 3, aca el usuario debe mantener el brazo recto por 2 segundos de lo contrario no es válida la rutina y debo
@@ -2107,51 +2127,106 @@ inline void NuiTrack::drawSkeleton()
 				cuello_base_izq = artFULL[5].real.y;
 				cuello_izquierdo = RedonI(cuello_base_izq + Umbral_Derecho);
 
-				
+
 				//dif_cadera_puño = RedonI(0.1 * abs(artFULL[21].real.y - artFULL[14].real.y));
 
 
 			// Aca debo preguntar si el puño esta a la altura del mentón del user, si es así debo manternerlo 2 segundos, sino cumple debo 
 			// ir al estado 5 de la carta
-			
 
-				if (artFULL[14].real.y >= (Cuello_Derecho)) // || (artFULL[8].real.y >= (cuello_izquierdo)))
+
+				if (artFULL[14].real.y >= (Cuello_Derecho))
+					// Acá detecta el puño derecho
 				{
 					contador_estado_3++;
+					//Band_auxiliar_E3 == 1;
 					Band_Estados = 3;
-					Band_auxiliar_E3 = 1;
+					
 					//break;
 				}
-				else 
-				{
-					// Transicion al ESTADO 5
-					if (((contador_estado_3 < estado_estable_3) && (artFULL[14].real.y <= (Cuello_Derecho - UmbralCuello)) && (Band_auxiliar_E3 == 1))) // || (((contador_estado_3 < estado_estable_3) && (artFULL[8].real.y <= (cuello_izquierdo - UmbralCuello)) && (Band_auxiliar_E3 == 1)))) 
+				else
+					Band_Estados = 2;
+				//else {
+					if ((contador_estado_3 < estado_estable_3) && (artFULL[14].real.y <= (Cuello_Derecho - UmbralCuello))) // && (Band_auxiliar_E3 == 1))
 					{
 						contador_estado_3 = 0;
-						Band_Estados = 5;// Me voy al estado donde anuncia que no debe bajar tan rápido el brazo
+						Band_Estados = 5;// Me voy al ESTADO donde anuncia que no debe bajar tan rápido el brazo
 						Band_auxiliar_E3 = 0;
 						break;
 					}
-				}
+				//}
+						if ((contador_estado_3 > estado_estable_3))
+						{
+							contador_estado_3 = 0;
+							Band_Estados = 6;
+							break;
+						}
+						//else
+							//Band_Estados = 3;
+						break;
+				
+			    
+					
+					//Band_auxiliar_E3 = 1;
+					//Band_aux_E3B = 1;
+					//break;
+				
+				//else {
+					//Band_Estados = 2;
+					//contador_estado_2 = 0;
+					//break;
+				//}
 
-				if ((contador_estado_3 > estado_estable_3))
+				/*
+				   // Aca debo preguntar si el USER levanto el brazo izquierdo
+				   if (artFULL[8].real.y >= (cuello_izquierdo)) //
+					   // Acá detecta el puño izquierdo
+				   {
+					   contador_estado_3++;
+					   Band_Estados = 3;
+					   Band_auxiliar_E3IZQ = 1;
+				   }
+				   else {
+					   Band_Estados = 2;
+					   //break;
+				   }
+				   */ //Brazo Izquierdo
+
+				   // Transicion al ESTADO 5 con el brazo derecho
+				//if ((contador_estado_3 < estado_estable_3) && (artFULL[14].real.y <= (Cuello_Derecho - UmbralCuello)) && (Band_auxiliar_E3 == 1))
+				//{
+					//contador_estado_3 = 0;
+					//Band_Estados = 5;// Me voy al ESTADO donde anuncia que no debe bajar tan rápido el brazo
+					//Band_auxiliar_E3 = 0;
+					//break;
+				//}
+				//}
+
+				/*
+				// Pregunto si bajo rápido el brazo izquierdo y me voy al ESTADO 5
+				if (((contador_estado_3 < estado_estable_3) && (artFULL[8].real.y <= (cuello_izquierdo - UmbralCuello)) && (Band_auxiliar_E3IZQ == 1)))
 				{
 					contador_estado_3 = 0;
-					Band_Estados = 6;
+					Band_Estados = 5;// Me voy al ESTADO donde anuncia que no debe bajar tan rápido el brazo
+					Band_auxiliar_E3IZQ = 0;
 					break;
 				}
-				
+				*/ // Brazo Izquierdo
+
 				//En esta sentencia lo que se identifica es si el user se adelanto a la rutina
 				//Band_Estados = 5;// En este Estado, que es el estado 4 de la carta
 				//break;           //Se identifica que el user bajo el brazo muy rápido por lo cual no es válido el ejercicio
 				//contador_estado_3 = 0;
-			
-			
+			//}// Fin case 3
+		//}// Fin SWITCH
 
+			
+		// FALTA AGREGAR LOS ESTADOS 6, 7 y 8.
+			 
 			case 4:
-				// En este estado se le vuelve a insistir a la persona que mantenga hombros y caderas rectas, este es un estado transitorio 
+				// En este estado se le vuelve a insistir a la persona que mantenga hombros y caderas rectas, este es un estado transitorio
 				// solamente presenta un delay
-				
+
 				//  Partes del Esqueleto
 				Hueso(skeleton_mat, articulacion, 6, 12, _fluo, esqueleto_ancho + 3); // Hombros en posición correcta
 				Hueso(skeleton_mat, articulacion, 21, 17, _fluo, esqueleto_ancho + 3);//Caderas rectas
@@ -2167,8 +2242,10 @@ inline void NuiTrack::drawSkeleton()
 					contador_estado_4 = 0;
 					Band_Estados = 2;
 					break;
+				}
 
-
+				break;
+		
 			case 5:
 				// En Estado solo se le indicará al user que no baje tan rápido el brazo porque pueden producirse tirones
 
@@ -2188,9 +2265,14 @@ inline void NuiTrack::drawSkeleton()
 					contador_estado_5 = 0;
 					Band_Estados = 2;
 					break;
-
 				}
 
+				break;
+				//}// Fin caso 5
+			//}//  fin SWITCH
+            
+		           
+				// REVISAR LAS SENTENCIAS DEL IF, HAY AMBIGUEDAD
 			case 6:
 				// En este estado que corresponde al E4 de la carta, el user debe bajar despacio el brazo
 
@@ -2210,29 +2292,57 @@ inline void NuiTrack::drawSkeleton()
 				muñeca_derecha = artFULL[14].real.y;
 
 				// Posición de la cadera izquierda
-				  
-				cadera_izquierda = artFULL[17].real.y;
-				muñeca_izquierda = artFULL[8].real.y;
+
+				//cadera_izquierda = artFULL[17].real.y;
+				//muñeca_izquierda = artFULL[8].real.y;
 
 
-				/* En estas sentencias se detecta cuando el user apoya la mancuerna en la cadera derecha o en la izquierda  */
+				//En estas sentencias se detecta cuando el user apoya la mancuerna en la cadera derecha o en la izquierda /
 				contador_estado_6++;
 				//dif_cadera_puño = RedonI(0.1 * abs(artFULL[21].real.z - artFULL[14].real.z));
 
-				/* En estas sentencias lo que se busca es que el user no apoye la mancuerna en la cadera derecha cuando paso el tiempo de bajada*/
+				// En estas sentencias lo que se busca es que el user no apoye la mancuerna en la cadera derecha cuando paso el tiempo de bajada/
 
-				if (((artFULL[14].real.y <= (cadera_derecha + Umbral_E8_cadera_derecha))) && (contador_estado_6 < estado_estable_6)) // || (((artFULL[8].real.y <= (cadera_izquierda + Umbral_E8_cadera_derecha))) && (contador_estado_6 < estado_estable_6)))
+				        ////////////// BRAZO DERECHO///////////////
+				if (contador_estado_6 > estado_estable_6) {
+					contador_estado_6 = 0;
+					Band_Estados = 7;
+					break;
+				}
+				else 
+					Band_Estados = 6;
+				
+
+				if (((artFULL[14].real.y <= (cadera_derecha + Umbral_E8_cadera_derecha)) && (contador_estado_6 < estado_estable_6))) // 
 				{
 					contador_estado_6 = 0;
 					Band_Estados = 8;
 					break;
 				}
-				else {
-					if (contador_estado_6 > estado_estable_6) {
-						contador_estado_6 = 0;
-						Band_Estados = 7;
-						break;
+				else
+					Band_Estados = 6;
+				
 
+				
+
+					//////////////////////////// BRAZO IZQUIERDO
+				//else {
+					//if (((((artFULL[8].real.y <= (cadera_izquierda + Umbral_E8_cadera_derecha))) && (contador_estado_6 < estado_estable_6))) && ((Band_auxiliar_E3 == 1)))
+					//{
+						//contador_estado_6 = 0;
+						//Band_Estados = 8;
+						//Band_auxiliar_E3 == 0;
+						//break;
+					//}
+					/////////////////////////////      
+				//}
+				
+				break;
+				//}// FIN caso 6
+			//}// FIN SWITCH
+			                 
+                      
+				
 			case 7:
 
 				// En este estado indicamos que la rutina  termino correctamente, hacemos un delay y pasamos de estado
@@ -2248,7 +2358,6 @@ inline void NuiTrack::drawSkeleton()
 				Hueso(skeleton_mat, articulacion, 7, 8, _fluo, esqueleto_ancho + 3);//Codo y muñeca izquierda
 				Hueso(skeleton_mat, articulacion, 13, 12, _fluo, esqueleto_ancho + 3);//Hombro y muñeca derecha
 
-
 				contador_estado_7++;
 
 				if (contador_estado_7 > estado_estable_7) {
@@ -2256,10 +2365,15 @@ inline void NuiTrack::drawSkeleton()
 					Band_Estados = 7;
 					break;
 				}
-		
-				break;  // Fin caso 7
 
-			case 8:
+				break; 
+			//}//Fin case 7
+		//}// Fin SWITCH
+		               
+	         
+              
+			  case 8:
+
 				// En este estado le indicamos al usuario que no debe apoyar la mancuerna en la cadera derecha o izquierda, luego de eso volvemos al incio
 				// de la rutina con el brazo correspondiente, es decir, no es válido el ejercicio
 
@@ -2281,16 +2395,13 @@ inline void NuiTrack::drawSkeleton()
 					Band_Estados = 1;// Estado donde se le pide que levante un brazo
 					break;
 				}
-				else {
+				else
 					Band_Estados = 8;
-				}
-					}
-				}
-				}
-			}
-		} //Fin estado 8
+			}//Fin case 8
 				
+		} //Fin SWITCH
 				
+			
 			
 		           
 			
@@ -2303,25 +2414,7 @@ inline void NuiTrack::drawSkeleton()
 		
 	
 
-			
-			
-			
-			
-		
-
-		
-	
 				
-				
-
-				
-		
-	
-		
-		
-			
-			
-			
 			
 			
 		//	algunas variables internas del salto
